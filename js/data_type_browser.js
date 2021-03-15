@@ -303,17 +303,19 @@ function brapiInitCalls() {
 
 // Initialize the whole broswer.
 $(function() {
+  console.log('BrAPI Data Type Browser Initialization');
   // $.getJSON("data/brapi_data.json", function(data) {
   $.getJSON("https://plantbreeding.github.io/brapi-ontology/data/brapi_data.json", function(data) {
     g_brapi_data = data;
+    brapiInitMenu();
+    brapiInitDataTypes();
+    brapiInitCalls();
+    // Hides popup on outside clicks.
+    $('#brapi_popup_wrap').on('click', function () {
+      $(this).css("display", "none");
+    });
+    // Do not hide popup when clicked.
+    $('#brapi_popup').on('click', function (event) {event.stopPropagation();});
+    console.log('BDTB Initialization done.');
   });
-  brapiInitMenu();
-  brapiInitDataTypes();
-  brapiInitCalls();
-  // Hides popup on outside clicks.
-  $('#brapi_popup_wrap').on('click', function () {
-    $(this).css("display", "none");
-  });
-  // Do not hide popup when clicked.
-  $('#brapi_popup').on('click', function (event) {event.stopPropagation();});
 });
