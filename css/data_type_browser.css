@@ -45,6 +45,17 @@
   background: white;
 }
 
+#brapi_module_list li.leaf {
+  font-weight: normal;
+  list-style-type: disc;
+}
+
+#brapi_module_list li.active {
+  font-weight: bold !important;
+  list-style-type: square !important;
+  color: orangered !important;
+}
+
 div.brapi-data-type, div.brapi-related {
   padding: 0.5em;
   border: 1px solid black;
@@ -52,6 +63,27 @@ div.brapi-data-type, div.brapi-related {
 
 li.brapi-data-type {
   cursor: pointer;
+}
+
+table.field-table {
+  margin-top: 1em;
+  width: 100%;
+  border-collapse: collapse;
+}
+
+table.field-table th {
+  text-align: left;
+}
+
+table.field-table th,
+table.field-table td {
+  border-top: 1px solid black;
+  border-bottom: 1px solid black;
+}
+
+table.field-table td.detail-link {
+  padding-right: 1em;
+  text-align: right;
 }
 
 .header {
@@ -63,4 +95,9 @@ li.brapi-data-type {
   display: block;
   padding: 1em;
   text-align: right;
+}
+
+.close-icon {
+  float: right;
+  cursor: pointer;
 }

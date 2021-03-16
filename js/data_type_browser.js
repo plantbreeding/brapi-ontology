@@ -4,16 +4,162 @@
  * A user web interface to browse BrAPI modules, categories and data types with
  * their related calls and other related data types.
  */
-var g_brapi_data = {}; // To be loaded fro data_type_browser.json
-var g_brapi_generic_fields = {"id": true};
+
+/**
+ * Global vairables 
+ *******************
+ * Here is a list of global variables (g_*) and their basic structure.
+ *
+ * - g_brapi_data: data loaded from "data/brapi_data.json" file.
+ *   {
+ *      "BrAPI-<MODULE NAME1>": {
+ *        "<CATEGORY NAME1>": {
+ *          "Calls": {
+ *            "<API CALL PATH1>": {
+ *              "methods": {
+ *                "<METHOD1>": {
+ *                  "description": "...",
+ *                  "parameters": [{
+ *                    "description": "...",
+ *                    "name": "<FIELD NAME>",
+ *                    "schema": {
+ *                      "$ref": "#/<PATH>/<DATA TYPE NAME>"
+ *                      // or
+ *                      "type": "<TYPE>"
+ *                    },
+ *                    ...
+ *                  },
+ *                  ...]
+ *                },
+ *                "<METHOD2>": {
+ *                  ...
+ *                },
+ *                ...
+ *              }
+ *            },
+ *            "<API CALL PATH2>": {
+ *              ...
+ *            },
+ *            ...
+ *          },
+ *          "Datatypes": {
+ *            "<DATA TYPE NAME1>": {
+ *              "properties": {
+ *                "<FIELD NAME>": {
+ *                  "format": "<FORMAT>",
+ *                  "type": "<TYPE>",
+ *                  "description": "...",
+ *                  "example": ...,
+ *                },
+ *                ...
+ *              },
+ *              "type": "..."
+ *            },
+ *            "<DATA TYPE NAME2>": {
+ *              ...
+ *            },
+ *            ...
+ *          }
+ *        },
+ *        "<CATEGORY NAME2>": {
+ *          ...
+ *        },
+ *        ...
+ *      },
+ *      "BrAPI-<MODULE NAME2>": {
+ *        ...
+ *      },
+ *      ...
+ *    };
+ * - g_brapi_data_types: contains data type details (calls using it, properties,
+ *   ...).
+ *   {
+ *     "<DATA TYPE NAME1>": {
+ *       "_calls": {
+ *         // List of calls using this data type.
+ *         "<API CALL PATH1>": {
+ *           "fields": {<FIELD NAME1>: true, <FIELD NAME2>: true, ...},
+ *           "object": <BOOLEAN> // True when the object is provided as
+ *                                  // parameter (in POST methods)
+ *         },
+ *         "<API CALL PATH2>": ...,
+ *         ...
+ *       },
+ *       "_completed": <BOOLEAN>, // True if object properties have been completely loaded.
+ *       "<FIELD NAME1>": {
+ *         "description": "...",
+ *         type: "...",
+ *         example: "..."
+ *       },
+ *       "<FIELD NAME2>": {
+ *         ...
+ *       },
+ *       ...
+ *     },
+ *     "<DATA TYPE NAME2>": {
+ *       ...
+ *     },
+ *     ...
+ *   };
+ *  
+ * - g_brapi_calls: List of calls with their associated objects.
+ *   {
+ *     "<API CALL PATH1>": {
+ *       "<DATA TYPE NAME1>": {
+ *         "object": <BOOLEAN>,
+ *         "fields": {
+ *           "<FIELD NAME1>": true,
+ *           "<FIELD NAME2>": true,
+ *           ...
+ *         }
+ *       }, 
+ *     },
+ *     "<API CALL PATH2>": {
+ *       ...
+ *     },
+ *     ...
+ *   };
+ *
+ * - g_brapi_fields: List of fields with thier associated data types and calls.
+ *   {
+ *     "<FIELD NAME1>": {
+ *       "calls": {
+ *         "API CALL PATH1": true,
+ *         "API CALL PATH2": true,
+ *         ...
+ *       },
+ *       "data_types": {
+ *         "DATA TYPE NAME1": true,
+ *         "DATA TYPE NAME2": true,
+ *         ...
+ *       }
+ *     },
+ *     "<FIELD NAME2>": {
+ *       ...
+ *     },
+ *     ...
+ *   };
+ *
+ * - g_unprocessed_data_types: list of data type names that still need to be
+ *   processed.
+ *
+ * - g_unprocessed_calls: list of API call paths that still need to be
+ *   processed.
+ */
+// Variables are initialized after page loading.
+var g_brapi_data = {}; // Contains data_type_browser.json.
+var g_brapi_generic_fields = {"additionalInfo": true}; // Fields to ignore for relationships.
 var g_brapi_data_types = {};
 var g_brapi_calls = {};
 var g_brapi_fields = {};
+var g_unprocessed_data_types = [];
+var g_unprocessed_calls = [];
 
 /**
  * Displays field details popup.
  */
 function displayFieldDetailsPopup(data_type_name, field_name) {
+  var close_icon = '<div class="close-icon">❎</div>';
   var type_name = '<div><span class="header">Type:</span> <code>'
     + g_brapi_data_types[data_type_name][field_name]['type']
     + '</code></div>'
@@ -33,11 +179,12 @@ function displayFieldDetailsPopup(data_type_name, field_name) {
     )
     + '</div>'
   ;
-  var ontology = '<div><span class="header">Ontology:</span> ...</div>';
-  var issue_link = 'Questions, comments, requests: <a class="issue-link" href="#" target="_blank">term discussion</a>'
+  var ontology = '<div><span class="header">Ontology:</span> (TODO: ontology name + term and link to ontology term)</div>';
+  var issue_link = '<div class="issue-link">Questions, comments, requests: <a href="#" target="_blank">term discussion</a></div>'
 
   $('#brapi_popup').html(
     '<div class="brapi-data-type-details">'
+    + close_icon
     + '<h3>' + field_name + ' details</h3>'
     + type_name
     + description
@@ -46,7 +193,7 @@ function displayFieldDetailsPopup(data_type_name, field_name) {
     + issue_link
     + '</div>'
   );
-  $('#brapi_popup_wrap').css("display", "block");
+  $('#brapi_popup_wrap').show().find('.close-icon').on('click', function () {$('#brapi_popup_wrap').hide(); });
 }
 
 /**
@@ -54,22 +201,23 @@ function displayFieldDetailsPopup(data_type_name, field_name) {
  */
 function brapiRenderDataType(data_type_name) {
   var data_type_html = '<div class="brapi-data-type"><div class="header">' + data_type_name + '</div>';
+  data_type_html += '<table class="field-table"><thead><tr><th>Field</th><th>Type</th><th>Issues</th><th></th></tr></thead><tbody>';
   for (var field_name in g_brapi_data_types[data_type_name]) {
     // Skip internal members.
     if (!field_name.match(/^_/)) {
-      data_type_html +=
-        '<div title="'
+      data_type_html += '<tr><td class="field-name"><div title="'
         + g_brapi_data_types[data_type_name][field_name]['description'].replace(/"/g, '&quot;')
         + '">'
         + field_name
-        + ' ('
+        + '</div></td><td class="type-name">'
         + g_brapi_data_types[data_type_name][field_name]['type']
-        + ')'
-        + ' <a href="javascript:displayFieldDetailsPopup(\'' + data_type_name + '\', \'' + field_name + '\')">view details</a>'
-        + '</div>'
+        + '</td><td class="issue-flags">'
+        + '' //+FIXME: add flags '?⚠∩⨝'
+        + '</td><td class="detail-link"><a href="javascript:displayFieldDetailsPopup(\'' + data_type_name + '\', \'' + field_name + '\')">view details</a></td></tr>'
       ;
     }
   }
+  data_type_html += '</tbody></table>';
   data_type_html += '</div>';
   return data_type_html;
 }
@@ -86,8 +234,6 @@ function brapiRenderRelatedCalls(data_type_name) {
   return related_func_html;
 }
 
-var g_unprocessed_data_types = [];
-var g_unprocessed_calls = [];
 /**
  * Processes a data type.
  * If there are inheritances and parent objects are not ready, the current
@@ -112,8 +258,11 @@ function brapiFillDataType(data_type) {
       "example": brapi_propery['example'] ?? ''
     };
     // Add field reference.
-    g_brapi_fields[property_name] = g_brapi_fields[property_name] ?? {};
-    g_brapi_fields[property_name][data_type_name] = true;
+    g_brapi_fields[property_name] = g_brapi_fields[property_name] ?? {
+      "calls": {},
+      "data_types": {},
+    };
+    g_brapi_fields[property_name].data_types[data_type_name] = true;
   }
   var inheritance = false;
   if (g_brapi_data[module][category]['Datatypes'][data_type_name]['allOf']) {
@@ -172,21 +321,60 @@ function brapiFillCall(call_ref) {
       // Check if call parameter uses a known field name.
       if (g_brapi_fields[call_parameter['name']]
           && !g_brapi_generic_fields[call_parameter['name']]) {
-        for (var data_type in g_brapi_fields[call_parameter['name']]) {
+        for (var data_type in g_brapi_fields[call_parameter['name']].data_types) {
           if (g_brapi_data_types[data_type]) {
             // Add call to data type related calls.
-            g_brapi_data_types[data_type]._calls[call_ref.call] = true;
+            if (!g_brapi_data_types[data_type]._calls[call_ref.call]) {
+              g_brapi_data_types[data_type]._calls[call_ref.call] = {
+                'fields': {},
+                'object': false
+              };
+            }
+            g_brapi_data_types[data_type]._calls[call_ref.call].fields[call_parameter['name']] = true;
           }
           else {
             console.log('WARNING: Missing data type "' + data_type + '" for call "' + call_ref.call + '"');
           }
         }
-        //+FIXME: Process $ref
+        if (call_parameter['$ref']) {
+          // Process $ref
+          var matches = call_parameter['$ref'].match(/\/(\w+)$/);
+          if (matches && matches[1]) {
+            if ('authorizationHeader' == matches[1]) {
+              // +FIXME: add a properties that says call requires authentication.
+            }
+          }
+        }
       }
       else {
         console.log('WARNING: Unknown field "' + call_parameter['name'] + '" for call "' + call_ref.call + '"');
       }
     });
+    // Process "requestBody".
+    if (call_data.methods[method]["requestBody"]
+        && call_data.methods[method]["requestBody"]["content"]
+        && call_data.methods[method]["requestBody"]["content"]["application/json"]
+        && call_data.methods[method]["requestBody"]["content"]["application/json"]["schema"]
+        && call_data.methods[method]["requestBody"]["content"]["application/json"]["schema"]["items"]
+        && call_data.methods[method]["requestBody"]["content"]["application/json"]["schema"]["items"]["$ref"]
+    ) {
+      // Process $ref
+      var matches = call_data.methods[method]["requestBody"]["content"]["application/json"]["schema"]["items"]["$ref"].match(/\/(\w+)$/);
+      if (matches && matches[1]) {
+        if (g_brapi_data_types[matches[1]]) {
+          // Adds reference to call.
+          if (!g_brapi_data_types[matches[1]]._calls[call_ref.call]) {
+            g_brapi_data_types[matches[1]]._calls[call_ref.call] = {
+              'fields': {},
+              'object': true
+            };
+          }
+          else {
+            g_brapi_data_types[matches[1]]._calls[call_ref.call].object = true;
+          }
+        }
+      }
+    }
   }
   //+FIXME: Processes components.
   //+++
@@ -216,14 +404,8 @@ function brapiInitMenu() {
           .appendTo($brapi_data_type_list)
           .on('click', (function(data_type_name) {
             return function(event) {
-              $('#brapi_module_list li:not(:has(ul))').css({
-                'font-weight': 'normal',
-                'list-style-type': 'disc'
-              });
-              $(this).css({
-                'font-weight': 'bold',
-                'list-style-type': 'square'
-              });
+              $('#brapi_module_list li:not(:has(ul))').removeClass('active');
+              $(this).addClass('active');
               $('#bdb_view').html(
                 '<div>'
                 + brapiRenderDataType(data_type_name)
@@ -267,7 +449,8 @@ function brapiInitMenu() {
   // Hide menu items by default.
   $('#brapi_module_list ul').hide();
   $('#brapi_module_list li:has(ul)').css('list-style-type', 'disclosure-closed');
-  $('#brapi_module_list li:not(:has(ul))').css('list-style-type', 'disc');
+  // Identify leaves.
+  $('#brapi_module_list li:not(:has(ul))').addClass('leaf');
 }
 
 /**
@@ -304,6 +487,7 @@ function brapiInitCalls() {
 // Initialize the whole broswer.
 $(function() {
   console.log('BrAPI Data Type Browser Initialization');
+  $("#bdb_view").html('<div>Initialization - Please wait...</div>');
   // $.getJSON("data/brapi_data.json", function(data) {
   $.getJSON("https://plantbreeding.github.io/brapi-ontology/data/brapi_data.json", function(data) {
     g_brapi_data = data;
@@ -312,10 +496,12 @@ $(function() {
     brapiInitCalls();
     // Hides popup on outside clicks.
     $('#brapi_popup_wrap').on('click', function () {
-      $(this).css("display", "none");
+      $(this).hide();
     });
     // Do not hide popup when clicked.
     $('#brapi_popup').on('click', function (event) {event.stopPropagation();});
+
+    $("#bdb_view").html('<div>Ready. Use left menu to browse data types.</div>');
     console.log('BDTB Initialization done.');
   });
 });
