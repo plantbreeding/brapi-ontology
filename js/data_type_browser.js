@@ -206,16 +206,42 @@ function brapiRenderDataType(data_type_name) {
   for (var field_name in g_brapi_data_types[data_type_name]) {
     // Skip internal members.
     if (!field_name.match(/^_/)) {
+      // Generate a random identifier.
+      var issue_id = Math.floor((Math.random()*0x100000000)).toString(16);
+      issue_id = 'issue_status_' + '0'.repeat(8 - issue_id.length) + issue_id;
+      
       data_type_html += '<tr><td class="field-name"><div title="'
         + g_brapi_data_types[data_type_name][field_name]['description'].replace(/"/g, '&quot;')
         + '">'
         + field_name
         + '</div></td><td class="type-name">'
         + g_brapi_data_types[data_type_name][field_name]['type']
-        + '</td><td class="issue-flags">'
-        + '' //+FIXME: add flags '?⚠∩⨝'
+        + '</td><td id="' + issue_id + '" class="issue-flags">'
+        + '⌛'
         + '</td><td class="detail-link"><a href="javascript:displayFieldDetailsPopup(\'' + data_type_name + '\', \'' + field_name + '\')">view details</a></td></tr>'
       ;
+      // Get issue status.
+      var issue_number = 3; //+FIXME: get issue number from field.
+      $.get('https://api.github.com/repos/plantbreeding/brapi-ontology/issues/' + issue_number + '/labels', (function(iid) { return function (data) {
+        //+FIXME: add flags '?⚠∩⨝'
+        var icons = '';
+        data.forEach(function (tag) {
+          if (tag.id == 2836406938) {
+            // invalid example.
+            icons += '⚠';
+          }
+          else if (tag.id == 2836405723) {
+            // missing definition.
+            icons += '?';
+          }
+          else if (tag.id == 2836408276) {
+            // naming issue.
+            icons += '⚠';
+          }
+        });
+        // console.log(data);
+        $('#' + iid).html(icons);
+      }})(issue_id));
     }
   }
   data_type_html += '</tbody></table>';
@@ -407,8 +433,6 @@ function brapiFillCall(call_ref) {
       }
     }
   }
-  //+FIXME: Processes components.
-  //+++
 }
 
 /**
