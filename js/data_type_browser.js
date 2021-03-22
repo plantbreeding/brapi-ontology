@@ -193,7 +193,7 @@ function displayFieldDetailsPopup(data_type_name, field_name) {
     + issue_link
     + '</div>'
   );
-  $('#brapi_popup_wrap').show().find('.close-icon').on('click', function () {$('#brapi_popup_wrap').hide(); });
+  $('#brapi_popup_wrapper').show().find('.close-icon').on('click', function () {$('#brapi_popup_wrapper').hide(); });
 }
 
 /**
@@ -202,6 +202,7 @@ function displayFieldDetailsPopup(data_type_name, field_name) {
 function brapiRenderDataType(data_type_name) {
   var data_type_html = '<div class="brapi-data-type"><div class="header">' + data_type_name + '</div>';
   data_type_html += '<table class="field-table"><thead><tr><th>Field</th><th>Type</th><th>Issues</th><th></th></tr></thead><tbody>';
+  //+FIXME: sort field names.
   for (var field_name in g_brapi_data_types[data_type_name]) {
     // Skip internal members.
     if (!field_name.match(/^_/)) {
@@ -227,9 +228,39 @@ function brapiRenderDataType(data_type_name) {
  */
 function brapiRenderRelatedCalls(data_type_name) {
   var related_func_html = '<div class="brapi-related"><div class="header">Related calls</div>';
+  //+FIXME: sort calls names.
+  var object_calls = [];
+  var field_calls = [];
   for (var call_name in g_brapi_data_types[data_type_name]._calls) {
-    related_func_html += '<div>' + call_name + '</div>';
+    if (g_brapi_data_types[data_type_name]._calls[call_name].object) {
+      object_calls.push(call_name);
+    }
+    else {
+      field_calls.push({"call": call_name, "fields": g_brapi_data_types[data_type_name]._calls[call_name].fields});
+    }
+    // related_func_html += '<div> <span class="call-name">' + call_name + '</span></div>';
   }
+  object_calls = object_calls.sort();
+  field_calls = field_calls.sort(function (a, b) {return new Intl.Collator().compare(a.call, b.call);});
+  
+  object_calls.forEach(function (oc) {
+    related_func_html += '<div> <span class="call-name">' + oc + '</span></div>';
+  });
+  
+  field_calls.forEach(function (fc) {
+    var field_list = [];
+    for (var field in fc.fields) {
+      field_list.push(field);
+    }
+    related_func_html +=
+      '<div> <span class="call-name">'
+      + fc.call
+      + '</span> (through field(s): '
+      + field_list.join(', ')
+      + ')</div>'
+    ;
+  });
+  
   related_func_html += '</div>';
   return related_func_html;
 }
@@ -390,6 +421,8 @@ function brapiInitMenu() {
   var $brapi_module_list = $('<ul id="brapi_module_list"></ul>')
     .appendTo($menu)
   ;
+  //+FIXME: add filtering menu.
+  //+FIXME: add sort.
   // Loops on module names.
   for (var brapi_module_name in g_brapi_data) {
     var $brapi_module = $('<li class="brapi-module" title="' + brapi_module_name + ' module">' + brapi_module_name + '</li>').appendTo($brapi_module_list);
@@ -495,7 +528,7 @@ $(function() {
     brapiInitDataTypes();
     brapiInitCalls();
     // Hides popup on outside clicks.
-    $('#brapi_popup_wrap').on('click', function () {
+    $('#brapi_popup_wrapper').on('click', function () {
       $(this).hide();
     });
     // Do not hide popup when clicked.

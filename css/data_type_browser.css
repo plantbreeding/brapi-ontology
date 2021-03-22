@@ -1,5 +1,5 @@
 /* Datatype browser */
-#brapi_datatype_browser {
+#brapi_data_type_browser {
   display: flex;
   flex-direction: row;
   flex-wrap: nowrap;
@@ -25,7 +25,7 @@
   padding: 0.5em;
 }
 
-#brapi_popup_wrap {
+#brapi_popup_wrapper {
   display: none;
   position: fixed;
   top: 0;
