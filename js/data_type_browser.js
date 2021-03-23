@@ -184,7 +184,11 @@ function displayFieldDetailsPopup(data_type_name, field_name) {
     + '</div>'
   ;
   var ontology = '<div><span class="header">Ontology:</span> (TODO: ontology name + term and link to ontology term)</div>';
-  var issue_link = '<div class="issue-link">Questions, comments, requests: <a href="#" target="_blank">term discussion</a></div>'
+  var issue_url = '#';
+  if (g_brapi_fields[field_name].issue) {
+    issue_url = 'https://github.com/plantbreeding/brapi-ontology/issues/' + g_brapi_fields[field_name].issue;
+  }
+  var issue_link = '<div class="issue-link">Questions, comments, requests: <a href="' + issue_url + '" target="_blank">term discussion</a></div>'
 
   $('#brapi_popup').html(
     '<div class="brapi-data-type-details">'
