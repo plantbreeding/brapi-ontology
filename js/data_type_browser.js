@@ -132,7 +132,8 @@
  *         "DATA TYPE NAME1": true,
  *         "DATA TYPE NAME2": true,
  *         ...
- *       }
+ *       },
+ *       "issue": <ISSUE ID>
  *     },
  *     "<FIELD NAME2>": {
  *       ...
@@ -145,6 +146,8 @@
  *
  * - g_unprocessed_calls: list of API call paths that still need to be
  *   processed.
+ *
+ * - g_issue_label_cache: hash of issue label data by term issue id.
  */
 // Variables are initialized after page loading.
 var g_brapi_data = {}; // Contains data_type_browser.json.
@@ -154,6 +157,7 @@ var g_brapi_calls = {};
 var g_brapi_fields = {};
 var g_unprocessed_data_types = [];
 var g_unprocessed_calls = [];
+var g_issue_label_cache = {};
 
 /**
  * Displays field details popup.
@@ -207,8 +211,8 @@ function brapiRenderDataType(data_type_name) {
     // Skip internal members.
     if (!field_name.match(/^_/)) {
       // Generate a random identifier.
-      var issue_id = Math.floor((Math.random()*0x100000000)).toString(16);
-      issue_id = 'issue_status_' + '0'.repeat(8 - issue_id.length) + issue_id;
+      var issue_html_id = Math.floor((Math.random()*0x100000000)).toString(16);
+      issue_html_id = 'issue_status_' + '0'.repeat(8 - issue_html_id.length) + issue_html_id;
       
       data_type_html += '<tr><td class="field-name"><div title="'
         + g_brapi_data_types[data_type_name][field_name]['description'].replace(/"/g, '&quot;')
@@ -216,37 +220,108 @@ function brapiRenderDataType(data_type_name) {
         + field_name
         + '</div></td><td class="type-name">'
         + g_brapi_data_types[data_type_name][field_name]['type']
-        + '</td><td id="' + issue_id + '" class="issue-flags">'
+        + '</td><td id="' + issue_html_id + '" class="issue-flags">'
         + '⌛'
         + '</td><td class="detail-link"><a href="javascript:displayFieldDetailsPopup(\'' + data_type_name + '\', \'' + field_name + '\')">view details</a></td></tr>'
       ;
       // Get issue status.
-      var issue_number = 3; //+FIXME: get issue number from field.
-      $.get('https://api.github.com/repos/plantbreeding/brapi-ontology/issues/' + issue_number + '/labels', (function(iid) { return function (data) {
-        //+FIXME: add flags '?⚠∩⨝'
-        var icons = '';
-        data.forEach(function (tag) {
-          if (tag.id == 2836406938) {
-            // invalid example.
-            icons += '⚠';
+      var issue_number = g_brapi_fields[field_name].issue;
+      if (!issue_number) {
+        console.log('Warning: missing issue number for term "' + field_name + '"');
+        data_type_html = data_type_html.replace(
+          '<td id="' + issue_html_id + '" class="issue-flags">⌛',
+          '<td id="' + issue_html_id + '" class="issue-flags">❌ Missing issue!'
+        );
+      }
+      else if (g_issue_label_cache[issue_number]) {
+        // Check if a $.get call returned something and wait otherwise.
+        var updateIcons = function(iid, inum) {
+          if (g_issue_label_cache[inum].length) {
+            $('#' + iid).html(brapiRenderIssueIcons(inum));
           }
-          else if (tag.id == 2836405723) {
-            // missing definition.
-            icons += '?';
+          else {
+            window.setTimeout(updateIcons, 1000, iid, inum);
           }
-          else if (tag.id == 2836408276) {
-            // naming issue.
-            icons += '⚠';
+        };
+        updateIcons(issue_html_id, issue_number);
+      }
+      else {
+        g_issue_label_cache[issue_number] = [];
+        $.get(
+          'https://api.github.com/repos/plantbreeding/brapi-ontology/issues/' + issue_number + '/labels',
+          (function(iid, inum) {
+            return function (data) {
+              g_issue_label_cache[inum] = data;
+              $('#' + iid).html(brapiRenderIssueIcons(inum));
+            }
           }
-        });
-        // console.log(data);
-        $('#' + iid).html(icons);
-      }})(issue_id));
+        )(issue_html_id, issue_number))
+        .fail((function(iid, inum) {
+            return function (jqXHR, textStatus, errorThrown) {
+              console.log('Failed to get data from Github: ' + errorThrown);
+              g_issue_label_cache[issue_number] = [{
+                "id": 0,
+                "node_id": '',
+                "url": '',
+                "name": "BrAPI issue status not available",
+                "color": "808080",
+                "default": false,
+                "description": "Github returned an error. Issue status not available. Symbol: n/a"
+              }];
+              $('#' + iid).html(brapiRenderIssueIcons(inum));
+            }
+          }
+        )(issue_html_id, issue_number));
+      }
     }
   }
   data_type_html += '</tbody></table>';
   data_type_html += '</div>';
   return data_type_html;
+}
+
+/**
+ * Renders issue icons.
+ */
+function brapiRenderIssueIcons(issue_number) {
+
+  if (!g_issue_label_cache[issue_number]) {
+    return 'n/a';
+  }
+
+  var html_output = '';
+  var icons = [];
+  // console.log(data);
+  g_issue_label_cache[issue_number].forEach(function (gh_label) {
+    // Only match BrAPI labels.
+    if (gh_label.name.match(/^BrAPI /)) {
+      // Matches "Symbol: XXX" in definition to extract symbol.
+      // The regexp will stop matching from the first dot "." after the
+      // symbol, if one, allowing extra comments.
+      icon = gh_label.description.match(/^(.*?)\s*Symbol: (.+?)(?:\..*)?$/);
+      if (icon) {
+        icons.push(
+          '<span class="issue-flag" style="color: #'
+          + gh_label.color
+          + ';" title="'
+          + icon[1].replace(/"/g, '&quot;')
+          + '">'
+          + icon[2]
+          + '</span>'
+        );
+      }
+      else {
+        icons.push('<span class="issue-flag" title="github label with no symbol - please fix label description">?</span>');
+      }
+    }
+  });
+  if (icons.length) {
+    html_output = icons.join(' ');
+  }
+  else {
+    html_output = '<span class="issue-flag" style="color: green;" title="OK">✓</span>';
+  }
+  return html_output;
 }
 
 /**
@@ -318,6 +393,7 @@ function brapiFillDataType(data_type) {
     g_brapi_fields[property_name] = g_brapi_fields[property_name] ?? {
       "calls": {},
       "data_types": {},
+      "issue": 0 //+FIXME: get issue number from yaml.
     };
     g_brapi_fields[property_name].data_types[data_type_name] = true;
   }

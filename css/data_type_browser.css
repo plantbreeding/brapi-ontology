@@ -97,6 +97,10 @@ table.field-table td.detail-link {
   text-align: right;
 }
 
+.issue-flag {
+  cursor: help;
+}
+
 .close-icon {
   float: right;
   cursor: pointer;
