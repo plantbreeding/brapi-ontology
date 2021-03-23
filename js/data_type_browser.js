@@ -86,14 +86,8 @@
  *         ...
  *       },
  *       "_completed": <BOOLEAN>, // True if object properties have been completely loaded.
- *       "<FIELD NAME1>": {
- *         "description": "...",
- *         type: "...",
- *         example: "..."
- *       },
- *       "<FIELD NAME2>": {
- *         ...
- *       },
+ *       "<FIELD NAME1>": true,
+ *       "<FIELD NAME2>": true,
  *       ...
  *     },
  *     "<DATA TYPE NAME2>": {
@@ -133,6 +127,8 @@
  *         "DATA TYPE NAME2": true,
  *         ...
  *       },
+ *       "ontology": <ONTOLOGY NAME>,
+ *       "ontology_link": <ONTOLOGY TERM URL>,
  *       "issue": <ISSUE ID>
  *     },
  *     "<FIELD NAME2>": {
@@ -165,25 +161,39 @@ var g_issue_label_cache = {};
 function displayFieldDetailsPopup(data_type_name, field_name) {
   var close_icon = '<div class="close-icon">❎</div>';
   var type_name = '<div><span class="header">Type:</span> <code>'
-    + g_brapi_data_types[data_type_name][field_name]['type']
+    + g_brapi_fields[field_name]['type']
     + '</code></div>'
   ;
   var description = (
-    g_brapi_data_types[data_type_name][field_name]['description']
-    ? '<div><span class="header">Description:</span> <i>' + g_brapi_data_types[data_type_name][field_name]['description'] + '</i></div>'
+    g_brapi_fields[field_name]['description']
+    ? '<div><span class="header">Description:</span> <i>' + g_brapi_fields[field_name]['description'] + '</i></div>'
     : '<div><span class="header">Description:</span> n/a</div>'
   );
   var examples =
     '<div class="brapi-example"><span class="header">Example(s):</span><br/>'
-    + (g_brapi_data_types[data_type_name][field_name]['example']
+    + (g_brapi_fields[field_name]['example']
       ? '<code>'
-        + g_brapi_data_types[data_type_name][field_name]['example']
+        + g_brapi_fields[field_name]['example']
         + '</code>'
       : 'n/a'
     )
     + '</div>'
   ;
-  var ontology = '<div><span class="header">Ontology:</span> (TODO: ontology name + term and link to ontology term)</div>';
+  var ontology = '';
+  if (g_brapi_fields[field_name].ontology_link) {
+    ontology = '<div><span class="header">Ontology:</span> <a href="'
+      + g_brapi_fields[field_name].ontology_link
+      + '">'
+      + g_brapi_fields[field_name].ontology
+      + '</a></div>'
+    ;
+  }
+  else if (g_brapi_fields[field_name].ontology) {
+    ontology = '<div><span class="header">Ontology:</span> ' + g_brapi_fields[field_name].ontology + '</div>';
+  }
+  else {
+    ontology = '<div><span class="header">Ontology:</span> n/a</div>';
+  }
   var issue_url = '#';
   if (g_brapi_fields[field_name].issue) {
     issue_url = 'https://github.com/plantbreeding/brapi-ontology/issues/' + g_brapi_fields[field_name].issue;
@@ -219,11 +229,11 @@ function brapiRenderDataType(data_type_name) {
       issue_html_id = 'issue_status_' + '0'.repeat(8 - issue_html_id.length) + issue_html_id;
       
       data_type_html += '<tr><td class="field-name"><div title="'
-        + g_brapi_data_types[data_type_name][field_name]['description'].replace(/"/g, '&quot;')
+        + g_brapi_fields[field_name]['description'].replace(/"/g, '&quot;')
         + '">'
         + field_name
         + '</div></td><td class="type-name">'
-        + g_brapi_data_types[data_type_name][field_name]['type']
+        + g_brapi_fields[field_name]['type']
         + '</td><td id="' + issue_html_id + '" class="issue-flags">'
         + '⌛'
         + '</td><td class="detail-link"><a href="javascript:displayFieldDetailsPopup(\'' + data_type_name + '\', \'' + field_name + '\')">view details</a></td></tr>'
@@ -388,16 +398,18 @@ function brapiFillDataType(data_type) {
   };
   for (var property_name in g_brapi_data[module][category]['Datatypes'][data_type_name]['properties']) {
     var brapi_propery = g_brapi_data[module][category]['Datatypes'][data_type_name]['properties'][property_name];
-    g_brapi_data_types[data_type_name][property_name] = {
-      "description": brapi_propery['description'] ?? '',
-      "type": brapi_propery['type'],
-      "example": brapi_propery['example'] ?? ''
-    };
+    g_brapi_data_types[data_type_name][property_name] = true;
     // Add field reference.
     g_brapi_fields[property_name] = g_brapi_fields[property_name] ?? {
       "calls": {},
       "data_types": {},
-      "issue": 0 //+FIXME: get issue number from yaml.
+      "description": brapi_propery['description'] ?? '',
+      "type": brapi_propery['type'],
+      "example": brapi_propery['example'] ?? '',
+      //+FIXME: get additional data from yaml.
+      "issue": 0,
+      "ontology": '',
+      "ontology_link": ''
     };
     g_brapi_fields[property_name].data_types[data_type_name] = true;
   }
@@ -417,11 +429,17 @@ function brapiFillDataType(data_type) {
       // Add regular properties.
       for (var property_name in inheritance_data['properties']) {
         var brapi_propery = inheritance_data['properties'][property_name];
-        g_brapi_data_types[data_type_name][property_name] = {
-          "description": brapi_propery['description'] ?? '',
-          "type": brapi_propery['type'],
-          "example": brapi_propery['example'] ?? ''
-        };
+        g_brapi_data_types[data_type_name][property_name] = true;
+        if (!g_brapi_fields[property_name]) {
+          g_brapi_fields[property_name] = {
+            "description": brapi_propery['description'] ?? '',
+            "type": brapi_propery['type'],
+            "example": brapi_propery['example'] ?? '',
+            "ontology": brapi_propery['x-ontology'] ?? '',
+            "ontology_link": brapi_propery['externalDoc'] ?? '',
+            "issue": brapi_propery['x-issue-number'] ?? 0
+          };
+        }
       }
       // Process inheritance if available.
       if (inheritance_data['$ref']) {
@@ -473,18 +491,27 @@ function brapiFillCall(call_ref) {
             console.log('WARNING: Missing data type "' + data_type + '" for call "' + call_ref.call + '"');
           }
         }
-        if (call_parameter['$ref']) {
-          // Process $ref
-          var matches = call_parameter['$ref'].match(/\/(\w+)$/);
-          if (matches && matches[1]) {
-            if ('authorizationHeader' == matches[1]) {
-              // +FIXME: add a properties that says call requires authentication.
-            }
+      }
+      else if (call_parameter['$ref']) {
+        // Process $ref
+        var matches = call_parameter['$ref'].match(/\/(\w+)$/);
+        if (matches && matches[1]) {
+          if ('authorizationHeader' == matches[1]) {
+            // +FIXME: add a properties that says call requires authentication.
           }
+          //+FIXME: skip page, pageSize, externalReferenceID, externalReferenceSource?
         }
       }
-      else {
+      else if (call_parameter['name'] && !g_brapi_fields[call_parameter['name']]) {
         console.log('WARNING: Unknown field "' + call_parameter['name'] + '" for call "' + call_ref.call + '"');
+        g_brapi_fields[call_parameter['name']] = {
+          "calls": {},
+          "data_types": {},
+          "ontology": call_parameter['x-ontology'] ?? '',
+          "ontology_link": call_parameter['externalDoc'] ?? '',
+          "issue": call_parameter['x-issue-number'] ?? ''
+         };
+         g_brapi_fields[call_parameter['name']]['calls'][call_ref.call] = true;
       }
     });
     // Process "requestBody".
