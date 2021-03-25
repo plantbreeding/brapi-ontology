@@ -95,6 +95,10 @@
  *          "<DATA TYPE NAME2>": true,
  *          ...
  *       },
+ *       "_description": '<DESCRIPTION>',
+ *       "_ontology_link": '<ONTOLOGY LINK>',
+ *       "_ontology": '<ONTOLOGY NAME>',
+ *       "_issue": <ISSUE NUMBER>,
  *       "_completed": <BOOLEAN>, // True if all data type fields have been completely loaded.
  *       "_has_menu": <BOOLEAN>, // True if data type has a menu entry.
  *       "<FIELD NAME1>": true,
@@ -552,9 +556,30 @@ function brapiProcessDataType(data_type_name, data_type_data) {
     "_calls": {},
     "_as_field_in": {},
     "_inherits_from": {},
+    "_description": '',
+    "_ontology_link": '',
+    "_ontology": '',
+    "_issue": 0,
     "_completed": true,
     "_has_menu": false
   };
+
+  if (data_type_data['description']) {
+    g_brapi_data_types[data_type_name]["_description"] = data_type_data['description'];
+  }
+
+  if (data_type_data['x-ontology']) {
+    g_brapi_data_types[data_type_name]["_ontology"] = data_type_data['x-ontology'];
+  }
+
+  if (data_type_data['externalDoc']) {
+    g_brapi_data_types[data_type_name]["_ontology_link"] = data_type_data['externalDoc'];
+  }
+
+  if (data_type_data['x-issue-number']) {
+    g_brapi_data_types[data_type_name]["_issue"] = data_type_data['x-issue-number'];
+  }
+
   // Process data type fields.
   var fields = brapiProcessFields(data_type_data['properties']);
   fields.forEach(function (field) {
