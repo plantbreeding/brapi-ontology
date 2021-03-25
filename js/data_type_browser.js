@@ -85,7 +85,13 @@
  *         "<API CALL PATH2>": ...,
  *         ...
  *       },
- *       "_completed": <BOOLEAN>, // True if object properties have been completely loaded.
+ *       "_objects": {
+ *          "<DATA TYPE NAME1>": true,
+ *          "<DATA TYPE NAME2>": true,
+ *          ...
+ *       },
+ *       "_completed": <BOOLEAN>, // True if all data type fields have been completely loaded.
+ *       "_has_menu": <BOOLEAN>, // True if data type has a menu entry.
  *       "<FIELD NAME1>": true,
  *       "<FIELD NAME2>": true,
  *       ...
@@ -147,7 +153,11 @@
  */
 // Variables are initialized after page loading.
 var g_brapi_data = {}; // Contains data_type_browser.json.
-var g_brapi_generic_fields = {"additionalInfo": true}; // Fields to ignore for relationships.
+// Fields to ignore for relationships.
+var g_brapi_generic_fields = {
+  "additionalInfo": true,
+  "type": true
+};
 var g_brapi_data_types = {};
 var g_brapi_calls = {};
 var g_brapi_fields = {};
@@ -381,6 +391,21 @@ function brapiRenderRelatedCalls(data_type_name) {
 }
 
 /**
+ * Renders a box with other data type related to the given data type.
+ */
+function brapiRenderRelatedDataTypes(data_type_name) {
+  var related_obj_html = '<div class="brapi-related"><div class="header">Related data types</div>';
+  //+FIXME: sort names.
+
+  for (var other_data_type in g_brapi_data_types[data_type_name]['_objects']) {
+    related_obj_html += '<div> <span class="call-name">' + other_data_type + '</span></div>';
+  };
+  
+  related_obj_html += '</div>';
+  return related_obj_html;
+}
+
+/**
  * Process a 'properties' object of an object (openAPI format).
  *
  * @return: returns an array of processed field names. It does not include
@@ -435,13 +460,21 @@ function brapiProcessFields(properties) {
 
 /**
  * Process a data type.
+ *
+ * If there are inheritances and parent objects are not ready, the current
+ * data type will be put back into the stack of data types to process
+ * g_unprocessed_data_types.
+ *
+ * @see https://swagger.io/specification/
  */
 function brapiProcessDataType(data_type_name, data_type_data) {
 
   // Add data type to the global registry.
   g_brapi_data_types[data_type_name] = {
     "_calls": {},
-    "_completed": true
+    "_objects": {},
+    "_completed": true,
+    "_has_menu": false
   };
   // Process data type fields.
   var fields = brapiProcessFields(data_type_data['properties']);
@@ -491,24 +524,6 @@ function brapiProcessDataType(data_type_name, data_type_data) {
   if (!g_brapi_data_types[data_type_name]._completed) {
     g_unprocessed_data_types.push(data_type);
   }
-}
-
-/**
- * Processes a data type.
- * If there are inheritances and parent objects are not ready, the current
- * data type will be put back into the stack of data types to process
- * g_unprocessed_data_types.
- *
- * @see https://swagger.io/specification/
- */
-function brapiFillDataType(data_type) {
-  var module = data_type.module
-      category = data_type.category, 
-      data_type_name = data_type.name;
-  brapiProcessDataType(
-    data_type_name,
-    g_brapi_data[module][category]['Datatypes'][data_type_name]
-  );
 }
 
 /**
@@ -593,7 +608,7 @@ function brapiFillCall(call_ref) {
  * Processes g_brapi_data to generate a menu and populates
  * g_unprocessed_data_types stack.
  */
-function brapiInitMenu() {
+function brapiPrepareMenu() {
   // Adds menu.
   var $menu = $('#bdb_left_panel');
   var $brapi_module_list = $('<ul id="brapi_module_list"></ul>')
@@ -622,6 +637,7 @@ function brapiInitMenu() {
                 '<div>'
                 + brapiRenderDataType(data_type_name)
                 + brapiRenderRelatedCalls(data_type_name)
+                + brapiRenderRelatedDataTypes(data_type_name)
                 + '</div>'
               );
             }
@@ -643,6 +659,98 @@ function brapiInitMenu() {
       }
     }
   }
+}
+
+/**
+ * Processes g_unprocessed_data_types populated by brapiPrepareMenu().
+ */
+function brapiInitDataTypes() {
+  var stack_size = 0;
+  // Loop while there are elements to process (handles inheritance).
+  while (g_unprocessed_data_types.length
+    && g_unprocessed_data_types.length != stack_size) {
+    // Clone stack.
+    var stack = g_unprocessed_data_types;
+    // Keep track of stack size to prevent infinite trials.
+    stack_size = stack.length;
+    // Empty current stack.
+    g_unprocessed_data_types = [];
+    // Process every element of the stack.
+    stack.forEach(function (data_type) {
+      brapiProcessDataType(
+        data_type.name,
+        g_brapi_data[data_type.module][data_type.category]['Datatypes'][data_type.name]
+      );
+      g_brapi_data_types[data_type.name]._has_menu = true;
+    });
+  }
+}
+
+/**
+ * Processes g_unprocessed_calls populated by brapiPrepareMenu().
+ */
+function brapiInitCalls() {
+  // Process every element of the stack.
+  g_unprocessed_calls.forEach(function (call_ref) {
+    brapiFillCall(call_ref);
+  });
+}
+
+/**
+ * 
+ */
+function brapiInitDataTypeRelationships() {
+  // Process every data type.
+  for (var data_type_name in g_brapi_data_types) {
+    // If the data type is also a field, it is a sub-object.
+    if (g_brapi_fields[data_type_name]) {
+      g_brapi_data_types[data_type_name]['_objects'] =
+        g_brapi_fields[data_type_name]['data_types'];
+    }
+  }
+}
+
+/**
+ * Add menu entries for other data types.
+ */
+function brapiPrepareOtherMenu() {
+  // Process other fields.
+  var $orphan = $('<li class="brapi-module" title="Other data types from calls and sub-objects.">Uncategorized data types</li>').appendTo('#brapi_module_list');
+  var $brapi_data_type_list = $('<ul id="other_data_type_list"></ul>').appendTo($orphan);
+  var other_data_types = [];
+  for (var brapi_data_type_name in g_brapi_data_types) {
+    if (!g_brapi_data_types[brapi_data_type_name]._has_menu) {
+      other_data_types.push(brapi_data_type_name);
+    }
+  }
+  other_data_types = other_data_types.sort();
+  other_data_types.forEach(function(brapi_data_type_name) {
+    // Add menu entry.
+    var $brapi_data_type = $('<li class="brapi-data-type" title="' + brapi_data_type_name + ' data type">' + brapi_data_type_name + '</li>')
+      .appendTo($brapi_data_type_list)
+      .on('click', (function(data_type_name) {
+        return function(event) {
+          $('#brapi_module_list li:not(:has(ul))').removeClass('active');
+          $(this).addClass('active');
+          $('#bdb_view').html(
+            '<div>'
+            + brapiRenderDataType(data_type_name)
+            + brapiRenderRelatedCalls(data_type_name)
+            + brapiRenderRelatedDataTypes(data_type_name)
+            + '</div>'
+          );
+        }
+      })(brapi_data_type_name))
+    ;
+  });
+}
+
+/**
+ * Initialize menu.
+ */
+function brapiStartMenu() {
+  // Menu.
+  var $menu = $('#bdb_left_panel');
 
   // Manages menu collapse.
   $menu.find('li')
@@ -665,37 +773,6 @@ function brapiInitMenu() {
   $('#brapi_module_list li:not(:has(ul))').addClass('leaf');
 }
 
-/**
- * Processes g_unprocessed_data_types populated by brapiInitMenu().
- */
-function brapiInitDataTypes() {
-  var stack_size = 0;
-  // Loop while there are elements to process (handles inheritance).
-  while (g_unprocessed_data_types.length
-    && g_unprocessed_data_types.length != stack_size) {
-    // Clone stack.
-    var stack = g_unprocessed_data_types;
-    // Keep track of stack size to prevent infinite trials.
-    stack_size = stack.length;
-    // Empty current stack.
-    g_unprocessed_data_types = [];
-    // Process every element of the stack.
-    stack.forEach(function (data_type) {
-      brapiFillDataType(data_type);
-    });
-  }
-}
-
-/**
- * Processes g_unprocessed_calls populated by brapiInitMenu().
- */
-function brapiInitCalls() {
-  // Process every element of the stack.
-  g_unprocessed_calls.forEach(function (call_ref) {
-    brapiFillCall(call_ref);
-  });
-}
-
 // Initialize the whole broswer.
 $(function() {
   console.log('BrAPI Data Type Browser Initialization');
@@ -703,13 +780,16 @@ $(function() {
   // $.getJSON("data/brapi_data.json", function(data) {
   $.getJSON("https://plantbreeding.github.io/brapi-ontology/data/brapi_data.json", function(data) {
     g_brapi_data = data;
-    brapiInitMenu();
+    brapiPrepareMenu();
     brapiInitDataTypes();
     brapiInitCalls();
+    brapiInitDataTypeRelationships();
+    brapiPrepareOtherMenu();
     // Hides popup on outside clicks.
     $('#brapi_popup_wrapper').on('click', function () {
       $(this).hide();
     });
+    brapiStartMenu();
     // Do not hide popup when clicked.
     $('#brapi_popup').on('click', function (event) {event.stopPropagation();});
 
