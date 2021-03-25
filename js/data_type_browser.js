@@ -381,66 +381,95 @@ function brapiRenderRelatedCalls(data_type_name) {
 }
 
 /**
- * Processes a data type.
- * If there are inheritances and parent objects are not ready, the current
- * data type will be put back into the stack of data types to process
- * g_unprocessed_data_types.
+ * Process a 'properties' object of an object (openAPI format).
  *
- * @see https://swagger.io/specification/
+ * @return: returns an array of processed field names. It does not include
+ *   subfields (ie. field names of objects that are in the given properties).
  */
-function brapiFillDataType(data_type) {
-  var module = data_type.module
-      category = data_type.category, 
-      data_type_name = data_type.name;
+function brapiProcessFields(properties) {
+  var processed_fields = [];
+  // Iterate on each field (aka property).
+  for (var property_name in properties) {
+    var brapi_propery = properties[property_name];
+    // Check if the field is already known.
+    if (!g_brapi_fields[property_name]) {
+      // Add field to known field list.
+      g_brapi_fields[property_name] = {
+        "calls": {},
+        "data_types": {},
+        "description": brapi_propery['description'] ?? '',
+        "type": brapi_propery['type'],
+        "example": brapi_propery['example'] ?? '',
+        //+FIXME: get additional data from yaml.
+        "issue": 0,
+        "ontology": '',
+        "ontology_link": ''
+      };
+      // Recurse on objects.
+      if (('object' == brapi_propery['type'])
+          && (!g_brapi_data_types[property_name])
+      ) {
+        // Add field as a data type since it is an object.
+        brapiProcessDataType(property_name, brapi_propery);
+      }
+      // Process arrays.
+      if (('array' == brapi_propery['type'])
+          && (!g_brapi_data_types[property_name])
+      ) {
+        if ('object' == brapi_propery['items']['type']) {
+          // Add field as a data type since it is an object.
+          brapiProcessDataType(property_name, brapi_propery['items']);
+        }
+        g_brapi_fields[property_name]['type'] =
+          'array of '
+          + brapi_propery['items']['type']
+          + 's' // Plural.
+        ;
+      }
+    }
+    processed_fields.push(property_name);
+  }
+
+  return processed_fields;
+}
+
+/**
+ * Process a data type.
+ */
+function brapiProcessDataType(data_type_name, data_type_data) {
+
+  // Add data type to the global registry.
   g_brapi_data_types[data_type_name] = {
     "_calls": {},
     "_completed": true
   };
-  for (var property_name in g_brapi_data[module][category]['Datatypes'][data_type_name]['properties']) {
-    var brapi_propery = g_brapi_data[module][category]['Datatypes'][data_type_name]['properties'][property_name];
-    g_brapi_data_types[data_type_name][property_name] = true;
-    // Add field reference.
-    g_brapi_fields[property_name] = g_brapi_fields[property_name] ?? {
-      "calls": {},
-      "data_types": {},
-      "description": brapi_propery['description'] ?? '',
-      "type": brapi_propery['type'],
-      "example": brapi_propery['example'] ?? '',
-      //+FIXME: get additional data from yaml.
-      "issue": 0,
-      "ontology": '',
-      "ontology_link": ''
-    };
-    g_brapi_fields[property_name].data_types[data_type_name] = true;
-  }
+  // Process data type fields.
+  var fields = brapiProcessFields(data_type_data['properties']);
+  fields.forEach(function (field) {
+    g_brapi_data_types[data_type_name][field] = true;
+    g_brapi_fields[field].data_types[data_type_name] = true;
+  });
+
   var inheritance = false;
-  if (g_brapi_data[module][category]['Datatypes'][data_type_name]['allOf']) {
+  if (data_type_data['allOf']) {
     inheritance = 'allOf';
   }
-  else if (g_brapi_data[module][category]['Datatypes'][data_type_name]['oneOf']) {
+  else if (data_type_data['oneOf']) {
     inheritance = 'oneOf';
   }
-  else if (g_brapi_data[module][category]['Datatypes'][data_type_name]['anyOf']) {
+  else if (data_type_data['anyOf']) {
     inheritance = 'anyOf';
   }
   // Check for inheritance.
   if (inheritance) {
-    g_brapi_data[module][category]['Datatypes'][data_type_name][inheritance].forEach(function(inheritance_data) {
-      // Add regular properties.
-      for (var property_name in inheritance_data['properties']) {
-        var brapi_propery = inheritance_data['properties'][property_name];
-        g_brapi_data_types[data_type_name][property_name] = true;
-        if (!g_brapi_fields[property_name]) {
-          g_brapi_fields[property_name] = {
-            "description": brapi_propery['description'] ?? '',
-            "type": brapi_propery['type'],
-            "example": brapi_propery['example'] ?? '',
-            "ontology": brapi_propery['x-ontology'] ?? '',
-            "ontology_link": brapi_propery['externalDoc'] ?? '',
-            "issue": brapi_propery['x-issue-number'] ?? 0
-          };
-        }
-      }
+    data_type_data[inheritance].forEach(function(inheritance_data) {
+      // Process regular fields.
+      var fields = brapiProcessFields(inheritance_data['properties']);
+      fields.forEach(function (field) {
+        g_brapi_data_types[data_type_name][field] = true;
+        g_brapi_fields[field].data_types[data_type_name] = true;
+      });
+
       // Process inheritance if available.
       if (inheritance_data['$ref']) {
         var matches = inheritance_data['$ref'].match(/\/(\w+)$/);
@@ -462,6 +491,24 @@ function brapiFillDataType(data_type) {
   if (!g_brapi_data_types[data_type_name]._completed) {
     g_unprocessed_data_types.push(data_type);
   }
+}
+
+/**
+ * Processes a data type.
+ * If there are inheritances and parent objects are not ready, the current
+ * data type will be put back into the stack of data types to process
+ * g_unprocessed_data_types.
+ *
+ * @see https://swagger.io/specification/
+ */
+function brapiFillDataType(data_type) {
+  var module = data_type.module
+      category = data_type.category, 
+      data_type_name = data_type.name;
+  brapiProcessDataType(
+    data_type_name,
+    g_brapi_data[module][category]['Datatypes'][data_type_name]
+  );
 }
 
 /**
@@ -554,6 +601,7 @@ function brapiInitMenu() {
   ;
   //+FIXME: add filtering menu.
   //+FIXME: add sort.
+  //+FIXME: add a menu for fields only used in call parameters
   // Loops on module names.
   for (var brapi_module_name in g_brapi_data) {
     var $brapi_module = $('<li class="brapi-module" title="' + brapi_module_name + ' module">' + brapi_module_name + '</li>').appendTo($brapi_module_list);
@@ -595,7 +643,7 @@ function brapiInitMenu() {
       }
     }
   }
-  
+
   // Manages menu collapse.
   $menu.find('li')
     .on('click', function(event) {
