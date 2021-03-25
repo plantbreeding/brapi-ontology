@@ -65,6 +65,11 @@ li.brapi-data-type {
   cursor: pointer;
 }
 
+span.brapi-data-type {
+  font-weight: bold;
+  cursor: pointer;
+}
+
 table.field-table {
   margin-top: 1em;
   width: 100%;
@@ -84,6 +89,15 @@ table.field-table td {
 table.field-table td.detail-link {
   padding-right: 1em;
   text-align: right;
+}
+
+div.detail-link {
+  float: right;
+  cursor: pointer;
+}
+
+span.detail-link {
+  cursor: pointer;
 }
 
 .header {

@@ -85,7 +85,12 @@
  *         "<API CALL PATH2>": ...,
  *         ...
  *       },
- *       "_objects": {
+ *       "_as_field_in": {
+ *          "<DATA TYPE NAME1>": true,
+ *          "<DATA TYPE NAME2>": true,
+ *          ...
+ *       },
+ *       "_inherits_from": {
  *          "<DATA TYPE NAME1>": true,
  *          "<DATA TYPE NAME2>": true,
  *          ...
@@ -168,8 +173,7 @@ var g_issue_label_cache = {};
 /**
  * Displays field details popup.
  */
-function displayFieldDetailsPopup(data_type_name, field_name) {
-  var close_icon = '<div class="close-icon">❎</div>';
+function displayFieldDetailsPopup(field_name) {
   var type_name = '<div><span class="header">Type:</span> <code>'
     + g_brapi_fields[field_name]['type']
     + '</code></div>'
@@ -210,10 +214,9 @@ function displayFieldDetailsPopup(data_type_name, field_name) {
   }
   var issue_link = '<div class="issue-link">Questions, comments, requests: <a href="' + issue_url + '" target="_blank">term discussion</a></div>'
 
-  $('#brapi_popup').html(
+  $('#brapi_popup_content').html(
     '<div class="brapi-data-type-details">'
-    + close_icon
-    + '<h3>' + field_name + ' details</h3>'
+    + '<h3><i>"' + field_name + '"</i> details</h3>'
     + type_name
     + description
     + ontology
@@ -221,32 +224,101 @@ function displayFieldDetailsPopup(data_type_name, field_name) {
     + issue_link
     + '</div>'
   );
-  $('#brapi_popup_wrapper').show().find('.close-icon').on('click', function () {$('#brapi_popup_wrapper').hide(); });
+  $('#brapi_popup_wrapper').show();
+}
+
+/**
+ * Displays datat type name details popup.
+ */
+function displayDataTypeNameDetailsPopup(data_type_name) {
+  var description = (
+    g_brapi_data_types[data_type_name]['_description']
+    ? '<div><span class="header">Description:</span> <i>' + g_brapi_data_types[data_type_name]['_description'] + '</i></div>'
+    : '<div><span class="header">Description:</span> n/a</div>'
+  );
+
+  var ontology = '';
+  if (g_brapi_data_types[data_type_name]['_ontology_link']) {
+    ontology = '<div><span class="header">Ontology:</span> <a href="'
+      + g_brapi_data_types[data_type_name]['_ontology_link']
+      + '">'
+      + g_brapi_data_types[data_type_name]['_ontology']
+      + '</a></div>'
+    ;
+  }
+  else if (g_brapi_data_types[data_type_name]['_ontology']) {
+    ontology = '<div><span class="header">Ontology:</span> ' + g_brapi_data_types[data_type_name]['_ontology'] + '</div>';
+  }
+  else {
+    ontology = '<div><span class="header">Ontology:</span> n/a</div>';
+  }
+  var issue_url = '#';
+  if (g_brapi_data_types[data_type_name]['_issue']) {
+    issue_url = 'https://github.com/plantbreeding/brapi-ontology/issues/' + g_brapi_data_types[data_type_name]['_issue'];
+  }
+  var issue_link = '<div class="issue-link">Questions, comments, requests: <a href="' + issue_url + '" target="_blank">term discussion</a></div>'
+
+  $('#brapi_popup_content').html(
+    '<div class="brapi-data-type-details">'
+    + '<h3><i>"' + data_type_name + '"</i> details</h3>'
+    + description
+    + ontology
+    + issue_link
+    + '</div>'
+  );
+  $('#brapi_popup_wrapper').show();
 }
 
 /**
  * Renders a box with the given data type fields.
  */
 function brapiRenderDataType(data_type_name) {
-  var data_type_html = '<div class="brapi-data-type"><div class="header">' + data_type_name + '</div>';
+  var data_type_html =
+    '<div class="brapi-data-type"><span class="header">'
+    + data_type_name
+    + '</span><div class="detail-link">[<span class="detail-link" onclick="javascript:displayDataTypeNameDetailsPopup(\''
+    + data_type_name
+    + '\')">term details</span>]</div>'
+  ;
+
   data_type_html += '<table class="field-table"><thead><tr><th>Field</th><th>Type</th><th>Issues</th><th></th></tr></thead><tbody>';
-  //+FIXME: sort field names.
+  // Sort field names.
+  var field_names = [];
   for (var field_name in g_brapi_data_types[data_type_name]) {
+    if (!field_name.match(/^_/)) {
+      field_names.push(field_name);
+    }
+  }
+  field_names = field_names.sort();
+  field_names.forEach(function (field_name) {
     // Skip internal members.
     if (!field_name.match(/^_/)) {
       // Generate a random identifier.
       var issue_html_id = Math.floor((Math.random()*0x100000000)).toString(16);
       issue_html_id = 'issue_status_' + '0'.repeat(8 - issue_html_id.length) + issue_html_id;
       
+      var field_name_label = field_name;
+      // If field is also a data type, link to data type.
+      if (g_brapi_data_types[field_name]) {
+        field_name_label =
+          '<span class="brapi-data-type" onclick="javascript:$(\'#bdb_view\').html(\'<div>\'+brapiRenderDataType(\''
+          + field_name
+          + '\')+brapiRenderRelatedCalls(\''
+          + field_name
+          + '\')+brapiRenderRelatedDataTypes(\''
+          + field_name
+          + '\')+\'</div>\');">' + field_name + '</span>';
+      }
+
       data_type_html += '<tr><td class="field-name"><div title="'
         + g_brapi_fields[field_name]['description'].replace(/"/g, '&quot;')
         + '">'
-        + field_name
+        + field_name_label
         + '</div></td><td class="type-name">'
         + g_brapi_fields[field_name]['type']
         + '</td><td id="' + issue_html_id + '" class="issue-flags">'
         + '⌛'
-        + '</td><td class="detail-link"><a href="javascript:displayFieldDetailsPopup(\'' + data_type_name + '\', \'' + field_name + '\')">view details</a></td></tr>'
+        + '</td><td class="detail-link">[<span class="detail-link" onclick="javascript:displayFieldDetailsPopup(\'' + field_name + '\')">view details</span>]</td></tr>'
       ;
       // Get issue status.
       var issue_number = g_brapi_fields[field_name].issue;
@@ -298,7 +370,7 @@ function brapiRenderDataType(data_type_name) {
         )(issue_html_id, issue_number));
       }
     }
-  }
+  });
   data_type_html += '</tbody></table>';
   data_type_html += '</div>';
   return data_type_html;
@@ -353,7 +425,6 @@ function brapiRenderIssueIcons(issue_number) {
  */
 function brapiRenderRelatedCalls(data_type_name) {
   var related_func_html = '<div class="brapi-related"><div class="header">Related calls</div>';
-  //+FIXME: sort calls names.
   var object_calls = [];
   var field_calls = [];
   for (var call_name in g_brapi_data_types[data_type_name]._calls) {
@@ -365,6 +436,8 @@ function brapiRenderRelatedCalls(data_type_name) {
     }
     // related_func_html += '<div> <span class="call-name">' + call_name + '</span></div>';
   }
+
+  // Sort calls names.
   object_calls = object_calls.sort();
   field_calls = field_calls.sort(function (a, b) {return new Intl.Collator().compare(a.call, b.call);});
   
@@ -395,11 +468,16 @@ function brapiRenderRelatedCalls(data_type_name) {
  */
 function brapiRenderRelatedDataTypes(data_type_name) {
   var related_obj_html = '<div class="brapi-related"><div class="header">Related data types</div>';
-  //+FIXME: sort names.
+  // Sort names.
+  var other_data_types = [];
+  for (var other_data_type in g_brapi_data_types[data_type_name]['_as_field_in']) {
+    other_data_types.push(other_data_type);
+  }
+  other_data_types = other_data_types.sort();
 
-  for (var other_data_type in g_brapi_data_types[data_type_name]['_objects']) {
+  other_data_types.forEach(function (other_data_type) {
     related_obj_html += '<div> <span class="call-name">' + other_data_type + '</span></div>';
-  };
+  });
   
   related_obj_html += '</div>';
   return related_obj_html;
@@ -472,7 +550,8 @@ function brapiProcessDataType(data_type_name, data_type_data) {
   // Add data type to the global registry.
   g_brapi_data_types[data_type_name] = {
     "_calls": {},
-    "_objects": {},
+    "_as_field_in": {},
+    "_inherits_from": {},
     "_completed": true,
     "_has_menu": false
   };
@@ -515,6 +594,7 @@ function brapiProcessDataType(data_type_name, data_type_data) {
           else {
             g_brapi_data_types[data_type_name]._completed = false;
           }
+          g_brapi_data_types[data_type_name]['_as_field_in'][inherited_data_type] = inheritance;
         }
       }
     });
@@ -615,22 +695,37 @@ function brapiPrepareMenu() {
     .appendTo($menu)
   ;
   //+FIXME: add filtering menu.
-  //+FIXME: add sort.
   //+FIXME: add a menu for fields only used in call parameters
   // Loops on module names.
   for (var brapi_module_name in g_brapi_data) {
     var $brapi_module = $('<li class="brapi-module" title="' + brapi_module_name + ' module">' + brapi_module_name + '</li>').appendTo($brapi_module_list);
     var $brapi_category_list = $('<ul></ul>').appendTo($brapi_module);
-    // Loops on categories.
+    // Sort categories.
+    var brapi_module_category_names = [];
     for (var brapi_module_category_name in g_brapi_data[brapi_module_name]) {
+      brapi_module_category_names.push(brapi_module_category_name);
+    }
+    brapi_module_category_names = brapi_module_category_names.sort();
+
+    // Loops on categories.
+    brapi_module_category_names.forEach(function (brapi_module_category_name) {
       var $brapi_category = $('<li class="brapi-category" title="' + brapi_module_category_name + ' category">' + brapi_module_category_name + '</li>').appendTo($brapi_category_list);
       var $brapi_data_type_list = $('<ul></ul>').appendTo($brapi_category);
-      // Loops on data types.
+      var brapi_data_type_names = [];
+
+      // Sort data types.
       for (var brapi_data_type_name in g_brapi_data[brapi_module_name][brapi_module_category_name]['Datatypes']) {
+        brapi_data_type_names.push(brapi_data_type_name);
+      }
+      brapi_data_type_names = brapi_data_type_names.sort();
+      
+      // Loops on data types.
+      brapi_data_type_names.forEach(function (brapi_data_type_name) {
         var $brapi_data_type = $('<li class="brapi-data-type" title="' + brapi_data_type_name + ' data type">' + brapi_data_type_name + '</li>')
           .appendTo($brapi_data_type_list)
           .on('click', (function(data_type_name) {
             return function(event) {
+              window.scrollTo(0, 0);
               $('#brapi_module_list li:not(:has(ul))').removeClass('active');
               $(this).addClass('active');
               $('#bdb_view').html(
@@ -648,7 +743,8 @@ function brapiPrepareMenu() {
           category: brapi_module_category_name,
           name:     brapi_data_type_name
         });
-      }
+      });
+      
       // Loops on calls.
       for (var brapi_call_path in g_brapi_data[brapi_module_name][brapi_module_category_name]['Calls']) {
         g_unprocessed_calls.push({
@@ -657,7 +753,7 @@ function brapiPrepareMenu() {
           call:     brapi_call_path
         });
       }
-    }
+    });
   }
 }
 
@@ -704,7 +800,7 @@ function brapiInitDataTypeRelationships() {
   for (var data_type_name in g_brapi_data_types) {
     // If the data type is also a field, it is a sub-object.
     if (g_brapi_fields[data_type_name]) {
-      g_brapi_data_types[data_type_name]['_objects'] =
+      g_brapi_data_types[data_type_name]['_as_field_in'] =
         g_brapi_fields[data_type_name]['data_types'];
     }
   }
@@ -730,6 +826,7 @@ function brapiPrepareOtherMenu() {
       .appendTo($brapi_data_type_list)
       .on('click', (function(data_type_name) {
         return function(event) {
+          window.scrollTo(0, 0);
           $('#brapi_module_list li:not(:has(ul))').removeClass('active');
           $(this).addClass('active');
           $('#bdb_view').html(
@@ -786,9 +883,13 @@ $(function() {
     brapiInitDataTypeRelationships();
     brapiPrepareOtherMenu();
     // Hides popup on outside clicks.
-    $('#brapi_popup_wrapper').on('click', function () {
-      $(this).hide();
-    });
+    $('#brapi_popup_wrapper')
+      .on('click', function () {
+        $(this).hide();
+      })
+      .find('.close-icon')
+        .on('click', function () {$('#brapi_popup_wrapper').hide(); })
+    ;
     brapiStartMenu();
     // Do not hide popup when clicked.
     $('#brapi_popup').on('click', function (event) {event.stopPropagation();});
