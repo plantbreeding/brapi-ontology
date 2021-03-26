@@ -75,7 +75,12 @@
  *   ...).
  *   {
  *     "<DATA TYPE NAME1>": {
- *       "_calls": {
+ *       "fields": {
+ *         "<FIELD NAME1>": true,
+ *         "<FIELD NAME2>": true,
+ *         ...
+ *       },
+ *       "calls": {
  *         // List of calls using this data type.
  *         "<API CALL PATH1>": {
  *           "fields": {<FIELD NAME1>: true, <FIELD NAME2>: true, ...},
@@ -85,25 +90,22 @@
  *         "<API CALL PATH2>": ...,
  *         ...
  *       },
- *       "_as_field_in": {
+ *       "as_field_in": {
  *          "<DATA TYPE NAME1>": true,
  *          "<DATA TYPE NAME2>": true,
  *          ...
  *       },
- *       "_inherits_from": {
+ *       "inherits_from": {
  *          "<DATA TYPE NAME1>": true,
  *          "<DATA TYPE NAME2>": true,
  *          ...
  *       },
- *       "_description": '<DESCRIPTION>',
- *       "_ontology_link": '<ONTOLOGY LINK>',
- *       "_ontology": '<ONTOLOGY NAME>',
- *       "_issue": <ISSUE NUMBER>,
- *       "_completed": <BOOLEAN>, // True if all data type fields have been completely loaded.
- *       "_has_menu": <BOOLEAN>, // True if data type has a menu entry.
- *       "<FIELD NAME1>": true,
- *       "<FIELD NAME2>": true,
- *       ...
+ *       "description": '<DESCRIPTION>',
+ *       "ontology_link": '<ONTOLOGY LINK>',
+ *       "ontology": '<ONTOLOGY NAME>',
+ *       "issue": <ISSUE NUMBER>,
+ *       "completed": <BOOLEAN>, // True if all data type fields have been completely loaded.
+ *       "has_menu": <BOOLEAN> // True if data type has a menu entry.
  *     },
  *     "<DATA TYPE NAME2>": {
  *       ...
@@ -198,23 +200,23 @@ function displayFieldDetailsPopup(field_name) {
     + '</div>'
   ;
   var ontology = '';
-  if (g_brapi_fields[field_name].ontology_link) {
+  if (g_brapi_fields[field_name]['ontology_link']) {
     ontology = '<div><span class="header">Ontology:</span> <a href="'
-      + g_brapi_fields[field_name].ontology_link
+      + g_brapi_fields[field_name]['ontology_link']
       + '">'
-      + g_brapi_fields[field_name].ontology
+      + g_brapi_fields[field_name]['ontology']
       + '</a></div>'
     ;
   }
-  else if (g_brapi_fields[field_name].ontology) {
-    ontology = '<div><span class="header">Ontology:</span> ' + g_brapi_fields[field_name].ontology + '</div>';
+  else if (g_brapi_fields[field_name]['ontology']) {
+    ontology = '<div><span class="header">Ontology:</span> ' + g_brapi_fields[field_name]['ontology'] + '</div>';
   }
   else {
     ontology = '<div><span class="header">Ontology:</span> n/a</div>';
   }
   var issue_url = '#';
-  if (g_brapi_fields[field_name].issue) {
-    issue_url = 'https://github.com/plantbreeding/brapi-ontology/issues/' + g_brapi_fields[field_name].issue;
+  if (g_brapi_fields[field_name]['issue']) {
+    issue_url = 'https://github.com/plantbreeding/brapi-ontology/issues/' + g_brapi_fields[field_name]['issue'];
   }
   var issue_link = '<div class="issue-link">Questions, comments, requests: <a href="' + issue_url + '" target="_blank">term discussion</a></div>'
 
@@ -236,29 +238,29 @@ function displayFieldDetailsPopup(field_name) {
  */
 function displayDataTypeNameDetailsPopup(data_type_name) {
   var description = (
-    g_brapi_data_types[data_type_name]['_description']
-    ? '<div><span class="header">Description:</span> <i>' + g_brapi_data_types[data_type_name]['_description'] + '</i></div>'
+    g_brapi_data_types[data_type_name]['description']
+    ? '<div><span class="header">Description:</span> <i>' + g_brapi_data_types[data_type_name]['description'] + '</i></div>'
     : '<div><span class="header">Description:</span> n/a</div>'
   );
 
   var ontology = '';
-  if (g_brapi_data_types[data_type_name]['_ontology_link']) {
+  if (g_brapi_data_types[data_type_name]['ontology_link']) {
     ontology = '<div><span class="header">Ontology:</span> <a href="'
-      + g_brapi_data_types[data_type_name]['_ontology_link']
+      + g_brapi_data_types[data_type_name]['ontology_link']
       + '">'
-      + g_brapi_data_types[data_type_name]['_ontology']
+      + g_brapi_data_types[data_type_name]['ontology']
       + '</a></div>'
     ;
   }
-  else if (g_brapi_data_types[data_type_name]['_ontology']) {
-    ontology = '<div><span class="header">Ontology:</span> ' + g_brapi_data_types[data_type_name]['_ontology'] + '</div>';
+  else if (g_brapi_data_types[data_type_name]['ontology']) {
+    ontology = '<div><span class="header">Ontology:</span> ' + g_brapi_data_types[data_type_name]['ontology'] + '</div>';
   }
   else {
     ontology = '<div><span class="header">Ontology:</span> n/a</div>';
   }
   var issue_url = '#';
-  if (g_brapi_data_types[data_type_name]['_issue']) {
-    issue_url = 'https://github.com/plantbreeding/brapi-ontology/issues/' + g_brapi_data_types[data_type_name]['_issue'];
+  if (g_brapi_data_types[data_type_name]['issue']) {
+    issue_url = 'https://github.com/plantbreeding/brapi-ontology/issues/' + g_brapi_data_types[data_type_name]['issue'];
   }
   var issue_link = '<div class="issue-link">Questions, comments, requests: <a href="' + issue_url + '" target="_blank">term discussion</a></div>'
 
@@ -282,97 +284,94 @@ function brapiRenderDataType(data_type_name) {
     + data_type_name
     + '</span><div class="detail-link">[<span class="detail-link" onclick="javascript:displayDataTypeNameDetailsPopup(\''
     + data_type_name
-    + '\')">term details</span>]</div>'
+    + '\')">data type term details</span>]</div>'
   ;
 
   data_type_html += '<table class="field-table"><thead><tr><th>Field</th><th>Type</th><th>Issues</th><th></th></tr></thead><tbody>';
   // Sort field names.
   var field_names = [];
-  for (var field_name in g_brapi_data_types[data_type_name]) {
-    if (!field_name.match(/^_/)) {
-      field_names.push(field_name);
-    }
+  for (var field_name in g_brapi_data_types[data_type_name]['fields']) {
+    field_names.push(field_name);
   }
   field_names = field_names.sort();
   field_names.forEach(function (field_name) {
-    // Skip internal members.
-    if (!field_name.match(/^_/)) {
-      // Generate a random identifier.
-      var issue_html_id = Math.floor((Math.random()*0x100000000)).toString(16);
-      issue_html_id = 'issue_status_' + '0'.repeat(8 - issue_html_id.length) + issue_html_id;
-      
-      var field_name_label = field_name;
-      // If field is also a data type, link to data type.
-      if (g_brapi_data_types[field_name]) {
-        field_name_label =
-          '<span class="brapi-data-type" onclick="javascript:$(\'#bdb_view\').html(\'<div>\'+brapiRenderDataType(\''
-          + field_name
-          + '\')+brapiRenderRelatedCalls(\''
-          + field_name
-          + '\')+brapiRenderRelatedDataTypes(\''
-          + field_name
-          + '\')+\'</div>\');">' + field_name + '</span>';
-      }
+    // Generate a random identifier.
+    var issue_html_id = Math.floor((Math.random()*0x100000000)).toString(16);
+    issue_html_id = 'issue_status_' + '0'.repeat(8 - issue_html_id.length) + issue_html_id;
+    
+    var field_name_label = field_name;
+    // If field is also a data type, link to data type.
+    if (g_brapi_data_types[field_name]) {
+      field_name_label =
+        '<span class="brapi-data-type" onclick="javascript:window.location.hash=\''
+        + field_name
+        + '\';$(\'#bdb_view\').html(\'<div>\'+brapiRenderDataType(\''
+        + field_name
+        + '\')+brapiRenderRelatedCalls(\''
+        + field_name
+        + '\')+brapiRenderRelatedDataTypes(\''
+        + field_name
+        + '\')+\'</div>\');">' + field_name + '</span>';
+    }
 
-      data_type_html += '<tr><td class="field-name"><div title="'
-        + g_brapi_fields[field_name]['description'].replace(/"/g, '&quot;')
-        + '">'
-        + field_name_label
-        + '</div></td><td class="type-name">'
-        + g_brapi_fields[field_name]['type']
-        + '</td><td id="' + issue_html_id + '" class="issue-flags">'
-        + '⌛'
-        + '</td><td class="detail-link">[<span class="detail-link" onclick="javascript:displayFieldDetailsPopup(\'' + field_name + '\')">view details</span>]</td></tr>'
-      ;
-      // Get issue status.
-      var issue_number = g_brapi_fields[field_name].issue;
-      if (!issue_number) {
-        console.log('Warning: missing issue number for term "' + field_name + '"');
-        data_type_html = data_type_html.replace(
-          '<td id="' + issue_html_id + '" class="issue-flags">⌛',
-          '<td id="' + issue_html_id + '" class="issue-flags">❌ Missing issue!'
-        );
-      }
-      else if (g_issue_label_cache[issue_number]) {
-        // Check if a $.get call returned something and wait otherwise.
-        var updateIcons = function(iid, inum) {
-          if (g_issue_label_cache[inum].length) {
+    data_type_html += '<tr><td class="field-name"><div title="'
+      + g_brapi_fields[field_name]['description'].replace(/"/g, '&quot;')
+      + '">'
+      + field_name_label
+      + '</div></td><td class="type-name">'
+      + g_brapi_fields[field_name]['type']
+      + '</td><td id="' + issue_html_id + '" class="issue-flags">'
+      + '⌛'
+      + '</td><td class="detail-link">[<span class="detail-link" onclick="javascript:displayFieldDetailsPopup(\'' + field_name + '\')">field details</span>]</td></tr>'
+    ;
+    // Get issue status.
+    var issue_number = g_brapi_fields[field_name]['issue'];
+    if (!issue_number) {
+      console.log('Warning: missing issue number for term "' + field_name + '"');
+      data_type_html = data_type_html.replace(
+        '<td id="' + issue_html_id + '" class="issue-flags">⌛',
+        '<td id="' + issue_html_id + '" class="issue-flags">❌ Missing issue!'
+      );
+    }
+    else if (g_issue_label_cache[issue_number]) {
+      // Check if a $.get call returned something and wait otherwise.
+      var updateIcons = function(iid, inum) {
+        if (g_issue_label_cache[inum].length) {
+          $('#' + iid).html(brapiRenderIssueIcons(inum));
+        }
+        else {
+          window.setTimeout(updateIcons, 1000, iid, inum);
+        }
+      };
+      updateIcons(issue_html_id, issue_number);
+    }
+    else {
+      g_issue_label_cache[issue_number] = [];
+      $.get(
+        'https://api.github.com/repos/plantbreeding/brapi-ontology/issues/' + issue_number + '/labels',
+        (function(iid, inum) {
+          return function (data) {
+            g_issue_label_cache[inum] = data;
             $('#' + iid).html(brapiRenderIssueIcons(inum));
           }
-          else {
-            window.setTimeout(updateIcons, 1000, iid, inum);
+        }
+      )(issue_html_id, issue_number))
+      .fail((function(iid, inum) {
+          return function (jqXHR, textStatus, errorThrown) {
+            console.log('Failed to get data from Github: ' + errorThrown);
+            g_issue_label_cache[issue_number] = [{
+              "id": 0,
+              "node_id": '',
+              "url": '',
+              "name": "BrAPI issue status not available",
+              "color": "808080",
+              "default": false,
+              "description": "Github returned an error. Issue status not available. Symbol: n/a"
+            }];
+            $('#' + iid).html(brapiRenderIssueIcons(inum));
           }
-        };
-        updateIcons(issue_html_id, issue_number);
-      }
-      else {
-        g_issue_label_cache[issue_number] = [];
-        $.get(
-          'https://api.github.com/repos/plantbreeding/brapi-ontology/issues/' + issue_number + '/labels',
-          (function(iid, inum) {
-            return function (data) {
-              g_issue_label_cache[inum] = data;
-              $('#' + iid).html(brapiRenderIssueIcons(inum));
-            }
-          }
-        )(issue_html_id, issue_number))
-        .fail((function(iid, inum) {
-            return function (jqXHR, textStatus, errorThrown) {
-              console.log('Failed to get data from Github: ' + errorThrown);
-              g_issue_label_cache[issue_number] = [{
-                "id": 0,
-                "node_id": '',
-                "url": '',
-                "name": "BrAPI issue status not available",
-                "color": "808080",
-                "default": false,
-                "description": "Github returned an error. Issue status not available. Symbol: n/a"
-              }];
-              $('#' + iid).html(brapiRenderIssueIcons(inum));
-            }
-          }
-        )(issue_html_id, issue_number));
-      }
+        }
+      )(issue_html_id, issue_number));
     }
   });
   data_type_html += '</tbody></table>';
@@ -394,15 +393,15 @@ function brapiRenderIssueIcons(issue_number) {
   // console.log(data);
   g_issue_label_cache[issue_number].forEach(function (gh_label) {
     // Only match BrAPI labels.
-    if (gh_label.name.match(/^BrAPI /)) {
+    if (gh_label['name'].match(/^BrAPI /)) {
       // Matches "Symbol: XXX" in definition to extract symbol.
       // The regexp will stop matching from the first dot "." after the
       // symbol, if one, allowing extra comments.
-      icon = gh_label.description.match(/^(.*?)\s*Symbol: (.+?)(?:\..*)?$/);
+      icon = gh_label['description'].match(/^(.*?)\s*Symbol: (.+?)(?:\..*)?$/);
       if (icon) {
         icons.push(
           '<span class="issue-flag" style="color: #'
-          + gh_label.color
+          + gh_label['color']
           + ';" title="'
           + icon[1].replace(/"/g, '&quot;')
           + '">'
@@ -431,19 +430,19 @@ function brapiRenderRelatedCalls(data_type_name) {
   var related_func_html = '<div class="brapi-related"><div class="header">Related calls</div>';
   var object_calls = [];
   var field_calls = [];
-  for (var call_name in g_brapi_data_types[data_type_name]._calls) {
-    if (g_brapi_data_types[data_type_name]._calls[call_name].object) {
+  for (var call_name in g_brapi_data_types[data_type_name]['calls']) {
+    if (g_brapi_data_types[data_type_name]['calls'][call_name]['object']) {
       object_calls.push(call_name);
     }
     else {
-      field_calls.push({"call": call_name, "fields": g_brapi_data_types[data_type_name]._calls[call_name].fields});
+      field_calls.push({"call": call_name, "fields": g_brapi_data_types[data_type_name]['calls'][call_name]['fields']});
     }
     // related_func_html += '<div> <span class="call-name">' + call_name + '</span></div>';
   }
 
   // Sort calls names.
   object_calls = object_calls.sort();
-  field_calls = field_calls.sort(function (a, b) {return new Intl.Collator().compare(a.call, b.call);});
+  field_calls = field_calls.sort(function (a, b) {return new Intl.Collator().compare(a['call'], b['call']);});
   
   object_calls.forEach(function (oc) {
     related_func_html += '<div> <span class="call-name">' + oc + '</span></div>';
@@ -451,12 +450,12 @@ function brapiRenderRelatedCalls(data_type_name) {
   
   field_calls.forEach(function (fc) {
     var field_list = [];
-    for (var field in fc.fields) {
+    for (var field in fc['fields']) {
       field_list.push(field);
     }
     related_func_html +=
       '<div> <span class="call-name">'
-      + fc.call
+      + fc['call']
       + '</span> (through field(s): '
       + field_list.join(', ')
       + ')</div>'
@@ -474,7 +473,7 @@ function brapiRenderRelatedDataTypes(data_type_name) {
   var related_obj_html = '<div class="brapi-related"><div class="header">Related data types</div>';
   // Sort names.
   var other_data_types = [];
-  for (var other_data_type in g_brapi_data_types[data_type_name]['_as_field_in']) {
+  for (var other_data_type in g_brapi_data_types[data_type_name]['as_field_in']) {
     other_data_types.push(other_data_type);
   }
   other_data_types = other_data_types.sort();
@@ -553,38 +552,39 @@ function brapiProcessDataType(data_type_name, data_type_data) {
 
   // Add data type to the global registry.
   g_brapi_data_types[data_type_name] = {
-    "_calls": {},
-    "_as_field_in": {},
-    "_inherits_from": {},
-    "_description": '',
-    "_ontology_link": '',
-    "_ontology": '',
-    "_issue": 0,
-    "_completed": true,
-    "_has_menu": false
+    "fields": {},
+    "calls": {},
+    "as_field_in": {},
+    "inherits_from": {},
+    "description": '',
+    "ontology_link": '',
+    "ontology": '',
+    "issue": 0,
+    "completed": true,
+    "has_menu": false
   };
 
   if (data_type_data['description']) {
-    g_brapi_data_types[data_type_name]["_description"] = data_type_data['description'];
+    g_brapi_data_types[data_type_name]["description"] = data_type_data['description'];
   }
 
   if (data_type_data['x-ontology']) {
-    g_brapi_data_types[data_type_name]["_ontology"] = data_type_data['x-ontology'];
+    g_brapi_data_types[data_type_name]["ontology"] = data_type_data['x-ontology'];
   }
 
   if (data_type_data['externalDoc']) {
-    g_brapi_data_types[data_type_name]["_ontology_link"] = data_type_data['externalDoc'];
+    g_brapi_data_types[data_type_name]["ontology_link"] = data_type_data['externalDoc'];
   }
 
   if (data_type_data['x-issue-number']) {
-    g_brapi_data_types[data_type_name]["_issue"] = data_type_data['x-issue-number'];
+    g_brapi_data_types[data_type_name]["issue"] = data_type_data['x-issue-number'];
   }
 
   // Process data type fields.
   var fields = brapiProcessFields(data_type_data['properties']);
   fields.forEach(function (field) {
-    g_brapi_data_types[data_type_name][field] = true;
-    g_brapi_fields[field].data_types[data_type_name] = true;
+    g_brapi_data_types[data_type_name]['fields'][field] = true;
+    g_brapi_fields[field]['data_types'][data_type_name] = true;
   });
 
   var inheritance = false;
@@ -603,8 +603,8 @@ function brapiProcessDataType(data_type_name, data_type_data) {
       // Process regular fields.
       var fields = brapiProcessFields(inheritance_data['properties']);
       fields.forEach(function (field) {
-        g_brapi_data_types[data_type_name][field] = true;
-        g_brapi_fields[field].data_types[data_type_name] = true;
+        g_brapi_data_types[data_type_name]['fields'][field] = true;
+        g_brapi_fields[field]['data_types'][data_type_name] = true;
       });
 
       // Process inheritance if available.
@@ -613,20 +613,20 @@ function brapiProcessDataType(data_type_name, data_type_data) {
         if (matches && matches[1]) {
           var inherited_data_type = matches[1];
           // Check if we got a parent and if the parent is completed.
-          if (g_brapi_data_types[inherited_data_type] && g_brapi_data_types[inherited_data_type]._completed) {
+          if (g_brapi_data_types[inherited_data_type] && g_brapi_data_types[inherited_data_type]['completed']) {
             Object.assign(g_brapi_data_types[data_type_name], g_brapi_data_types[inherited_data_type]);
           }
           else {
-            g_brapi_data_types[data_type_name]._completed = false;
+            g_brapi_data_types[data_type_name]['completed'] = false;
           }
-          g_brapi_data_types[data_type_name]['_as_field_in'][inherited_data_type] = inheritance;
+          g_brapi_data_types[data_type_name]['as_field_in'][inherited_data_type] = inheritance;
         }
       }
     });
   }
   //+FIXME handle "additionalProperties"
   // Check data type processing status.
-  if (!g_brapi_data_types[data_type_name]._completed) {
+  if (!g_brapi_data_types[data_type_name]['completed']) {
     g_unprocessed_data_types.push(data_type);
   }
 }
@@ -635,27 +635,27 @@ function brapiProcessDataType(data_type_name, data_type_data) {
  * Processes a call data.
  */
 function brapiFillCall(call_ref) {
-  var call_data = g_brapi_data[call_ref.module][call_ref.category]['Calls'][call_ref.call];
-  g_brapi_calls[call_ref.call] = {};
+  var call_data = g_brapi_data[call_ref['module']][call_ref['category']]['Calls'][call_ref['call']];
+  g_brapi_calls[call_ref['call']] = {};
   // Processes methods.
-  for (var method in call_data.methods) {
-    call_data.methods[method]["parameters"].forEach(function (call_parameter) {
+  for (var method in call_data['methods']) {
+    call_data['methods'][method]["parameters"].forEach(function (call_parameter) {
       // Check if call parameter uses a known field name.
       if (g_brapi_fields[call_parameter['name']]
           && !g_brapi_generic_fields[call_parameter['name']]) {
-        for (var data_type in g_brapi_fields[call_parameter['name']].data_types) {
+        for (var data_type in g_brapi_fields[call_parameter['name']]['data_types']) {
           if (g_brapi_data_types[data_type]) {
             // Add call to data type related calls.
-            if (!g_brapi_data_types[data_type]._calls[call_ref.call]) {
-              g_brapi_data_types[data_type]._calls[call_ref.call] = {
+            if (!g_brapi_data_types[data_type]['calls'][call_ref['call']]) {
+              g_brapi_data_types[data_type]['calls'][call_ref['call']] = {
                 'fields': {},
                 'object': false
               };
             }
-            g_brapi_data_types[data_type]._calls[call_ref.call].fields[call_parameter['name']] = true;
+            g_brapi_data_types[data_type]['calls'][call_ref['call']]['fields'][call_parameter['name']] = true;
           }
           else {
-            console.log('WARNING: Missing data type "' + data_type + '" for call "' + call_ref.call + '"');
+            console.log('WARNING: Missing data type "' + data_type + '" for call "' + call_ref['call'] + '"');
           }
         }
       }
@@ -670,7 +670,7 @@ function brapiFillCall(call_ref) {
         }
       }
       else if (call_parameter['name'] && !g_brapi_fields[call_parameter['name']]) {
-        console.log('WARNING: Unknown field "' + call_parameter['name'] + '" for call "' + call_ref.call + '"');
+        console.log('WARNING: Unknown field "' + call_parameter['name'] + '" for call "' + call_ref['call'] + '"');
         g_brapi_fields[call_parameter['name']] = {
           "calls": {},
           "data_types": {},
@@ -678,30 +678,30 @@ function brapiFillCall(call_ref) {
           "ontology_link": call_parameter['externalDoc'] ?? '',
           "issue": call_parameter['x-issue-number'] ?? ''
          };
-         g_brapi_fields[call_parameter['name']]['calls'][call_ref.call] = true;
+         g_brapi_fields[call_parameter['name']]['calls'][call_ref['call']] = true;
       }
     });
     // Process "requestBody".
-    if (call_data.methods[method]["requestBody"]
-        && call_data.methods[method]["requestBody"]["content"]
-        && call_data.methods[method]["requestBody"]["content"]["application/json"]
-        && call_data.methods[method]["requestBody"]["content"]["application/json"]["schema"]
-        && call_data.methods[method]["requestBody"]["content"]["application/json"]["schema"]["items"]
-        && call_data.methods[method]["requestBody"]["content"]["application/json"]["schema"]["items"]["$ref"]
+    if (call_data['methods'][method]["requestBody"]
+        && call_data['methods'][method]["requestBody"]["content"]
+        && call_data['methods'][method]["requestBody"]["content"]["application/json"]
+        && call_data['methods'][method]["requestBody"]["content"]["application/json"]["schema"]
+        && call_data['methods'][method]["requestBody"]["content"]["application/json"]["schema"]["items"]
+        && call_data['methods'][method]["requestBody"]["content"]["application/json"]["schema"]["items"]["$ref"]
     ) {
       // Process $ref
-      var matches = call_data.methods[method]["requestBody"]["content"]["application/json"]["schema"]["items"]["$ref"].match(/\/(\w+)$/);
+      var matches = call_data['methods'][method]["requestBody"]["content"]["application/json"]["schema"]["items"]["$ref"].match(/\/(\w+)$/);
       if (matches && matches[1]) {
         if (g_brapi_data_types[matches[1]]) {
           // Adds reference to call.
-          if (!g_brapi_data_types[matches[1]]._calls[call_ref.call]) {
-            g_brapi_data_types[matches[1]]._calls[call_ref.call] = {
+          if (!g_brapi_data_types[matches[1]]['calls'][call_ref['call']]) {
+            g_brapi_data_types[matches[1]]['calls'][call_ref['call']] = {
               'fields': {},
               'object': true
             };
           }
           else {
-            g_brapi_data_types[matches[1]]._calls[call_ref.call].object = true;
+            g_brapi_data_types[matches[1]]['calls'][call_ref['call']]['object'] = true;
           }
         }
       }
@@ -750,6 +750,7 @@ function brapiPrepareMenu() {
           .appendTo($brapi_data_type_list)
           .on('click', (function(data_type_name) {
             return function(event) {
+              window.location.hash = data_type_name;
               window.scrollTo(0, 0);
               $('#brapi_module_list li:not(:has(ul))').removeClass('active');
               $(this).addClass('active');
@@ -799,10 +800,10 @@ function brapiInitDataTypes() {
     // Process every element of the stack.
     stack.forEach(function (data_type) {
       brapiProcessDataType(
-        data_type.name,
-        g_brapi_data[data_type.module][data_type.category]['Datatypes'][data_type.name]
+        data_type['name'],
+        g_brapi_data[data_type['module']][data_type['category']]['Datatypes'][data_type['name']]
       );
-      g_brapi_data_types[data_type.name]._has_menu = true;
+      g_brapi_data_types[data_type['name']]['has_menu'] = true;
     });
   }
 }
@@ -825,7 +826,7 @@ function brapiInitDataTypeRelationships() {
   for (var data_type_name in g_brapi_data_types) {
     // If the data type is also a field, it is a sub-object.
     if (g_brapi_fields[data_type_name]) {
-      g_brapi_data_types[data_type_name]['_as_field_in'] =
+      g_brapi_data_types[data_type_name]['as_field_in'] =
         g_brapi_fields[data_type_name]['data_types'];
     }
   }
@@ -840,7 +841,7 @@ function brapiPrepareOtherMenu() {
   var $brapi_data_type_list = $('<ul id="other_data_type_list"></ul>').appendTo($orphan);
   var other_data_types = [];
   for (var brapi_data_type_name in g_brapi_data_types) {
-    if (!g_brapi_data_types[brapi_data_type_name]._has_menu) {
+    if (!g_brapi_data_types[brapi_data_type_name]['has_menu']) {
       other_data_types.push(brapi_data_type_name);
     }
   }
@@ -851,6 +852,7 @@ function brapiPrepareOtherMenu() {
       .appendTo($brapi_data_type_list)
       .on('click', (function(data_type_name) {
         return function(event) {
+          window.location.hash = data_type_name;
           window.scrollTo(0, 0);
           $('#brapi_module_list li:not(:has(ul))').removeClass('active');
           $(this).addClass('active');
@@ -920,6 +922,28 @@ $(function() {
     $('#brapi_popup').on('click', function (event) {event.stopPropagation();});
 
     $("#bdb_view").html('<div>Ready. Use left menu to browse data types.</div>');
+    // Check if a term has already been selected.
+    if (window.location.hash
+        && g_brapi_data_types[window.location.hash.replace(/^#/, '')]
+    ) {
+      var data_type_name = window.location.hash.replace(/^#/, '');
+      function loadHashDataType(hash_data_type) {
+        console.log('Loading data type details for "' + data_type_name + '"');
+        if (g_brapi_data_types[hash_data_type]['completed']) {
+          $('#bdb_view').html(
+            '<div>'
+            + brapiRenderDataType(hash_data_type)
+            + brapiRenderRelatedCalls(hash_data_type)
+            + brapiRenderRelatedDataTypes(hash_data_type)
+            + '</div>'
+          );
+        }
+        else {
+          window.setTimeout(loadHashDataType, 200, hash_data_type);
+        }
+      }
+      window.setTimeout(loadHashDataType, 200, data_type_name);
+    }
     console.log('BDTB Initialization done.');
   });
 });
