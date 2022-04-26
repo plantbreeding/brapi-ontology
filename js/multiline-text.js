@@ -6,6 +6,7 @@ d3.multilineText = function() {
     var paddingBottom = 10;
     var paddingLeft = 10;
     var paddingRight = 10;
+    var className = 'className';
     var textAnchorsByHorizontalAlign = {
         'center': 'middle',
         'left': 'start',
@@ -32,20 +33,35 @@ d3.multilineText = function() {
             }
             lineCount = lines.length;
 
-            textElem
-                .attr('text-anchor', textAnchorsByHorizontalAlign[horizontalAlign])
-                .attr('fill', 'black')
-                .attr('transform', function(d) {
-                    return 'translate(' + translateX(d) + ',' + translateY(d) + ')';
-                });
-
             for (lineI = 0; lineI < lineCount; lineI++) {
                 line = lines[lineI];
-                textElem.append('tspan')
+
+                var lineG = textElem.append("g")
+                    .attr("id", className + "-" + line);
+
+                var lineText = lineG.append('text')
+                    .attr("font-size", 12)
+                    .attr('text-anchor', textAnchorsByHorizontalAlign[horizontalAlign])
+                    .attr('fill', 'black')
+                    .attr('transform', function(d) {
+                        return 'translate(' + translateX(d) + ',' + translateY(d) + ')';
+                    });
+
+                lineText.append('tspan')
                     .attr('x', 0)
                     .attr('y', lineTspanY(lineI, lineCount))
                     .attr('dy', lineTspanAttrs())
                     .text(line);
+
+                var lineBBox = getBBox(lineText);
+                if (lineBBox.y > 2) {
+                    var dividerY = lineBBox.y + 3;
+                    lineG.append("path")
+                        .attr('d', 'M0,' + dividerY + 'L' + width + ',' + dividerY + 'Z')
+                        .attr("fill", "none")
+                        .attr("stroke", "#b5c9b5")
+                        .attr("stroke-width", 1)
+                }
             }
         });
     }
@@ -101,9 +117,29 @@ d3.multilineText = function() {
         }
     }
 
+    function getBBox(elt) {
+        if (elt.node()) {
+            const clonedElt = elt.clone(true);
+            const svg = d3.create('svg');
+            svg.node().appendChild(clonedElt.node());
+            document.body.appendChild(svg.node());
+            const { x, y, width, height } = clonedElt.node().getBBox();
+            document.body.removeChild(svg.node());
+            return { x, y, width, height };
+        } else {
+            return { x: 0, y: 0, width: 0, height: 0 };
+        }
+    }
+
     function result(d, property) {
         return typeof property === 'function' ? property(d) : property;
     }
+
+    my.className = function(value) {
+        if (!arguments.length) return className;
+        className = value;
+        return my;
+    };
 
     my.lineHeight = function(value) {
         if (!arguments.length) return lineHeight;

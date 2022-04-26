@@ -18,10 +18,27 @@
     <script type="text/javascript" src="js/class-model.js"></script>
     <script type="text/javascript" src="js/uml.js"></script>
     <link href="css/uml.css" rel="stylesheet" />
+
+    <script type="text/javascript" src="js/data_type_browser.js"></script>
+    <link href="css/data_type_browser.css" rel="stylesheet" />
 </head>
 
 <body>
-    <div class="box">
+    <h1>BrAPI Data Type Browser</h1>
+    <!-- BrAPI Datatype Browser v0.1, Valentin Guignon  -->
+    <div style="float: left; width: 50%;">
+        <div id="brapi_data_type_browser">
+            <div id="bdb_left_panel"></div>
+            <div id="bdb_view"></div>
+        </div>
+        <div id="brapi_popup_wrapper">
+            <div id="brapi_popup">
+                <div class="close-icon">❎</div>
+                <div id="brapi_popup_content"></div>
+            </div>
+        </div>
+    </div>
+    <div class="box" style="float: right; width: 50%;">
         <div class="row header">
             <p></p>
         </div>
