@@ -545,6 +545,28 @@ function brapiRenderRelatedDataTypes(data_type_name) {
 }
 
 /**
+ * Displays a data type and update URL hash.
+ *
+ * @param data_type_name (string)
+ *   The data type name.
+ */
+function showDataType(data_type_name) {
+  window.location.hash = data_type_name;
+  window.scrollTo(0, 0);
+  $('#brapi_module_list li:not(:has(ul))').removeClass('active');
+  $(this).addClass('active');
+  $('#bdb_view').html(
+    '<div>'
+    + brapiRenderDataType(data_type_name)
+    + brapiRenderRelatedCalls(data_type_name)
+    + brapiRenderRelatedDataTypes(data_type_name)
+    + '</div>'
+  );
+}
+
+
+
+/**
  * Process a 'properties' object of an object (openAPI format).
  *
  * @return: returns an array of processed field names. It does not include
@@ -853,17 +875,7 @@ function brapiPrepareMenu() {
           .appendTo($brapi_data_type_list)
           .on('click', (function(data_type_name) {
             return function(event) {
-              window.location.hash = data_type_name;
-              window.scrollTo(0, 0);
-              $('#brapi_module_list li:not(:has(ul))').removeClass('active');
-              $(this).addClass('active');
-              $('#bdb_view').html(
-                '<div>'
-                + brapiRenderDataType(data_type_name)
-                + brapiRenderRelatedCalls(data_type_name)
-                + brapiRenderRelatedDataTypes(data_type_name)
-                + '</div>'
-              );
+              showDataType(data_type_name);
             }
           })(brapi_data_type_name))
         ;
@@ -977,17 +989,7 @@ function brapiPrepareOtherMenu() {
       .appendTo($brapi_data_type_list)
       .on('click', (function(data_type_name) {
         return function(event) {
-          window.location.hash = data_type_name;
-          window.scrollTo(0, 0);
-          $('#brapi_module_list li:not(:has(ul))').removeClass('active');
-          $(this).addClass('active');
-          $('#bdb_view').html(
-            '<div>'
-            + brapiRenderDataType(data_type_name)
-            + brapiRenderRelatedCalls(data_type_name)
-            + brapiRenderRelatedDataTypes(data_type_name)
-            + '</div>'
-          );
+          showDataType(data_type_name);
         }
       })(brapi_data_type_name))
     ;

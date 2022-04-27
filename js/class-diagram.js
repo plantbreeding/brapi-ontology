@@ -14,6 +14,9 @@ d3.classDiagram = (function() {
             .attr("font-size", 12)
             .attr('text-anchor', 'left')
             .attr('fill', 'black');
+        if (typeof window.showDataType === 'function') { 
+          classNameText.attr('onclick', "showDataType('" + classObj.className + "');");
+        }
 
         classNameText.append('tspan')
             .attr('x', '0.5em')
