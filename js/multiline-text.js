@@ -43,25 +43,44 @@ d3.multilineText = function() {
                     .attr("font-size", 12)
                     .attr('text-anchor', textAnchorsByHorizontalAlign[horizontalAlign])
                     .attr('fill', 'black')
-                    .attr('transform', function(d) {
-                        return 'translate(' + translateX(d) + ',' + translateY(d) + ')';
-                    });
+                    .attr('transform', 'translate(' + paddingLeft + ',' + (paddingTop + 2) + ')');
+
+                var displayLine = line;
+                if (displayLine.length > 27) {
+                    displayLine = displayLine.substring(0, 24) + '...';
+                }
 
                 lineText.append('tspan')
                     .attr('x', 0)
                     .attr('y', lineTspanY(lineI, lineCount))
                     .attr('dy', lineTspanAttrs())
-                    .text(line);
+                    .text(displayLine);
 
-                var lineBBox = getBBox(lineText);
+                var lineBBox = d3.getBBox(lineText);
+                var dividerY = lineBBox.y;
+                var dividerLine = lineG.append("path")
+                    .attr("fill", "none")
+                    .attr("stroke", "#b5c9b5")
+                    .attr('d', 'M0,' + dividerY + 'L' + width + ',' + dividerY + 'Z');
                 if (lineBBox.y > 2) {
-                    var dividerY = lineBBox.y + 3;
-                    lineG.append("path")
-                        .attr('d', 'M0,' + dividerY + 'L' + width + ',' + dividerY + 'Z')
-                        .attr("fill", "none")
-                        .attr("stroke", "#b5c9b5")
-                        .attr("stroke-width", 1)
+                    dividerLine.attr("stroke-width", 1)
+                } else {
+                    dividerLine.attr("stroke-width", 0)
                 }
+
+                var lineGBBox = d3.getBBox(lineG);
+                lineG.append('rect')
+                    .attr("fill", "white")
+                    .attr("opacity", "0")
+                    .attr('pointer-events', 'all')
+                    .attr('width', lineGBBox.width)
+                    .attr('height', lineGBBox.height + 1.5)
+                    .attr('x', lineGBBox.x)
+                    .attr('y', lineGBBox.y)
+                    .attr('data-class-name', className)
+                    .attr('data-class-attribute-name', className + "-" + line)
+                    .on('mouseover', EventsService.classGlowMouseOver)
+                    .on('mouseout', EventsService.classGlowMouseOut);
             }
         });
     }
@@ -114,20 +133,6 @@ d3.multilineText = function() {
                 return '1em'
             case 'bottom':
                 return 0
-        }
-    }
-
-    function getBBox(elt) {
-        if (elt.node()) {
-            const clonedElt = elt.clone(true);
-            const svg = d3.create('svg');
-            svg.node().appendChild(clonedElt.node());
-            document.body.appendChild(svg.node());
-            const { x, y, width, height } = clonedElt.node().getBBox();
-            document.body.removeChild(svg.node());
-            return { x, y, width, height };
-        } else {
-            return { x: 0, y: 0, width: 0, height: 0 };
         }
     }
 
