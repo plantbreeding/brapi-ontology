@@ -1,128 +1,155 @@
 ConnectorsService = (function() {
 
-    legsMap = {
-        "horizantal": {},
-        "vertical": {}
-    }
+    // build path functions ----------------------------------------------------
+    function buildConnectorModels(classMap) {
+        var connectors = {};
 
-    function getFromLegsMap(legsMap, orrientation, value) {
-        return legsMap[orrientation][value | 0] ? legsMap[orrientation][value | 0] : [];
-    }
-
-    function addToLegMap(legsMap, leg) {
-        if (leg.isHorizantal) {
-            var value = leg.y() | 0
-            if (!legsMap.horizantal[value]) {
-                legsMap.horizantal[value] = [];
+        var links = []
+        for (const classObj of Object.values(classMap)) {
+            for (const link of classObj.links) {
+                if (link.end in classMap) {
+                    link.classObj = classObj;
+                    link.startingAnchor = classObj.anchor(link.start);
+                    link.endingAnchor = classMap[link.end].anchor(link.end);
+                    links.push(link);
+                }
             }
-            legsMap.horizantal[value].push({ "start": leg.x1, "end": leg.x2 });
-        } else {
-            var value = leg.x() | 0
-            if (!legsMap.vertical[value]) {
-                legsMap.vertical[value] = [];
-            }
-            legsMap.vertical[value].push({ "start": leg.y1, "end": leg.y2 });
         }
-    }
 
-    function isBetween(test, lower, upper) {
-        if (lower < upper)
-            return test >= lower && test <= upper
-        else
-            return test >= upper && test <= lower
+        links.sort((a, b) => {
+            var distanceA = Math.sqrt(Math.pow((a.startingAnchor.x - a.endingAnchor.x), 2) + Math.pow((a.startingAnchor.y - a.endingAnchor.y), 2));
+            var distanceB = Math.sqrt(Math.pow((b.startingAnchor.x - b.endingAnchor.x), 2) + Math.pow((b.startingAnchor.y - b.endingAnchor.y), 2));
+
+            return distanceA - distanceB;
+        })
+
+        for (const link of links) {
+            console.log(link.start + ' => ' + link.end);
+            if (link.start == 'Reference-commonCropName') {
+                console.log('breakpoint')
+            }
+
+            var points = buildPath(classMap, legsMap, link.classObj, link.startingAnchor, link.endingAnchor);
+
+            var connector = {
+                id: link.start,
+                points: points,
+                markerEnd: 'filledTraiangle'
+            }
+            connectors[link.start] = connector;
+        }
+
+        return connectors;
     }
 
     function buildPath(classMap, legsMap, startingClass, startingAnchor, endingAnchor) {
-
+        endingAnchor.y = nearestTen(endingAnchor.y);
         // first Leg
         var firstLeg = new PathLegModel(startingAnchor, true);
-        firstLeg.step(1);
+        firstLeg.x2 = nearestTen(startingAnchor.x + 10);
+        firstLeg.y1 = nearestTen(startingAnchor.y);
+        firstLeg.y2 = nearestTen(startingAnchor.y);
         makeTurn(classMap, legsMap, firstLeg, endingAnchor);
 
         addToLegMap(legsMap, firstLeg);
 
-        var nextLeg = new PathLegModel(firstLeg.end(), !firstLeg.isHorizantal);
+        var secondLeg = new PathLegModel(firstLeg.end(), !firstLeg.isHorizantal);
 
         var nextY = endingAnchor.y;
         if (firstLeg.end().y > endingAnchor.y) {
             // go up
-            nextY = Math.max(startingClass.topY() - 10, endingAnchor.y)
+            var top = nearestTen(startingClass.topY() - 10);
+            nextY = Math.max(top, endingAnchor.y)
         } else {
             //go down
-            nextY = Math.min(startingClass.bottomY() + 10, endingAnchor.y)
+            var bottom = nearestTen(startingClass.bottomY() + 10);
+            nextY = Math.min(bottom, endingAnchor.y)
         }
-        nextLeg.y2 = nextY;
-        var collisionResult = detectBoxCollision(classMap, nextLeg);
-        nextLeg = collisionResult.leg;
-        makeTurn(classMap, legsMap, nextLeg, endingAnchor);
+        secondLeg.y2 = nextY;
+        var collisionResult = detectLineCollision(legsMap, secondLeg);
+        var targetPoint = endingAnchor;
+        if (!secondLeg.equals(collisionResult.leg)) {
+            targetPoint = { x: secondLeg.x() + 10, y: endingAnchor.y };
+            secondLeg = collisionResult.leg;
+        }
 
-        addToLegMap(legsMap, nextLeg);
+        collisionResult = detectBoxCollision(classMap, secondLeg);
+        secondLeg = collisionResult.leg;
+        makeTurn(classMap, legsMap, secondLeg, targetPoint);
 
-        maxPathLength = 20;
+        addToLegMap(legsMap, secondLeg);
+
         var pathPoints = [
             firstLeg.start(),
             firstLeg.end(),
-            nextLeg.end()
+            secondLeg.end()
         ]
 
+        var prevLeg = secondLeg;
+        var maxPathLength = 20;
         while (maxPathLength > 0) {
             maxPathLength--;
 
-            var thirdLeg = new PathLegModel(nextLeg.end(), !nextLeg.isHorizantal);
+            var horizLeg = new PathLegModel(prevLeg.end(), !prevLeg.isHorizantal);
 
-            if (isBetween(thirdLeg.y(), endingAnchor.y - 1, endingAnchor.y + 1)) {
-                thirdLeg.x2 = endingAnchor.x - 1;
-                var collisionResult = detectBoxCollision(classMap, thirdLeg);
-                thirdLeg = collisionResult.leg;
-                if (thirdLeg.x2 == endingAnchor.x - 1) {
-                    pathEnded = true;
+            if (isBetween(horizLeg.y(), endingAnchor.y - 1, endingAnchor.y + 1)) {
+                horizLeg.x2 = endingAnchor.x - 1;
+                var collisionResult = detectBoxCollision(classMap, horizLeg);
+                horizLeg = collisionResult.leg;
+                if (horizLeg.x2 == endingAnchor.x - 1) {
                     pathPoints.push(endingAnchor);
                     break;
                 }
             }
 
-            if (nextLeg.end().x == endingAnchor.x - 20) {
-                thirdLeg.x2 = endingAnchor.x - 30;
+            if (prevLeg.end().x == targetPoint.x - 20) {
+                horizLeg.x2 = targetPoint.x - 30;
             } else {
-                thirdLeg.x2 = endingAnchor.x - 20;
+                horizLeg.x2 = targetPoint.x - 20;
             }
-            var collisionResult = detectBoxCollision(classMap, thirdLeg);
-            thirdLeg = collisionResult.leg;
+
+            // var collisionResult = detectLineCollision(legsMap, horizLeg);
+            // horizLeg = collisionResult.leg;
+            var collisionResult = detectBoxCollision(classMap, horizLeg);
+            horizLeg = collisionResult.leg;
             var collisionBox = collisionResult.collisionBox;
-            makeTurn(classMap, legsMap, thirdLeg, endingAnchor);
+            makeTurn(classMap, legsMap, horizLeg, targetPoint);
 
-            addToLegMap(legsMap, thirdLeg);
-            pathPoints.push(thirdLeg.end());
+            addToLegMap(legsMap, horizLeg);
+            pathPoints.push(horizLeg.end());
+            targetPoint = endingAnchor;
 
-            var fourthLeg = new PathLegModel(thirdLeg.end(), !thirdLeg.isHorizantal);
+            var vertLeg = new PathLegModel(horizLeg.end(), !horizLeg.isHorizantal);
 
-            var nextY = endingAnchor.y;
+            var nextY = targetPoint.y;
             if (collisionBox) {
-                averageY = (fourthLeg.y2 + endingAnchor.y) / 2;
+                averageY = (vertLeg.y2 + targetPoint.y) / 2;
                 if (averageY < collisionBox.midY()) {
                     // go up and over
-                    nextY = collisionBox.topY() - 10;
+                    nextY = nearestTen(collisionBox.topY() - 10);
                 } else {
                     // go down and under
-                    nextY = collisionBox.bottomY() + 10;
+                    nextY = nearestTen(collisionBox.bottomY() + 10);
                 }
             }
 
-            fourthLeg.y2 = nextY
-            var collisionResult = detectBoxCollision(classMap, fourthLeg);
-            fourthLeg = collisionResult.leg;
-            makeTurn(classMap, legsMap, fourthLeg, endingAnchor);
+            vertLeg.y2 = nextY
+                // var collisionResult = detectLineCollision(legsMap, vertLeg);
+                // vertLeg = collisionResult.leg;
+            var collisionResult = detectBoxCollision(classMap, vertLeg);
+            vertLeg = collisionResult.leg;
+            makeTurn(classMap, legsMap, vertLeg, targetPoint);
 
-            addToLegMap(legsMap, fourthLeg);
-            pathPoints.push(fourthLeg.end());
-            nextLeg = fourthLeg;
+            addToLegMap(legsMap, vertLeg);
+            pathPoints.push(vertLeg.end());
+            prevLeg = vertLeg;
         }
 
         if (maxPathLength <= 0) {
             console.error("max path length reached");
         }
 
-        cleanUpPath(pathPoints);
+        cleanUpPath(classMap, legsMap, pathPoints);
         return pathPoints;
     }
 
@@ -179,8 +206,52 @@ ConnectorsService = (function() {
         return { collisionBox, leg };
     }
 
+    function detectLineCollision(legsMap, originalLeg) {
+        var leg = new PathLegModel(originalLeg.start(), originalLeg.isHorizantal, originalLeg.end());
+
+        var possibleCollisions = [];
+        var collisionLeg;
+        if (leg.isHorizantal) {
+            possibleCollisions = getFromLegsMap(legsMap, "horizantal", leg.y());
+
+            for (const existingLeg of possibleCollisions) {
+                if (doIntersect(leg.start(), leg.end(), { x: existingLeg.start, y: leg.y() }, { x: existingLeg.end, y: leg.y() })) {
+                    var newX;
+                    if (leg.x1 < leg.x2) {
+                        // going right
+                        newX = Math.min(existingLeg.start, existingLeg.end) - 10;
+                    } else {
+                        // going left
+                        newX = Math.max(existingLeg.start, existingLeg.end) + 10;
+                    }
+                    leg.x2 = newX;
+                    collisionLeg = new PathLegModel({ x: existingLeg.start, y: leg.y() }, true, { x: existingLeg.end, y: leg.y() })
+                }
+            }
+        } else {
+            possibleCollisions = getFromLegsMap(legsMap, "vertical", leg.x());
+
+            for (const existingLeg of possibleCollisions) {
+                if (doIntersect(leg.start(), leg.end(), { y: existingLeg.start, x: leg.x() }, { y: existingLeg.end, x: leg.x() })) {
+                    var newY;
+                    if (leg.y1 < leg.y2) {
+                        // going down
+                        newY = Math.min(existingLeg.start, existingLeg.end) - 10;
+                    } else {
+                        // going up
+                        newY = Math.max(existingLeg.start, existingLeg.end) + 10;
+                    }
+                    leg.y2 = newY;
+                    collisionLeg = new PathLegModel({ y: existingLeg.start, x: leg.x() }, false, { y: existingLeg.end, x: leg.x() })
+                }
+            }
+        }
+
+        return { collisionLeg, leg };
+    }
+
     function makeTurn(classMap, legsMap, leg, targetPoint) {
-        testLeg = new PathLegModel(leg.end(), !leg.isHorizantal);
+        var testLeg = new PathLegModel(leg.end(), !leg.isHorizantal);
         if (testLeg.isHorizantal) {
             if (targetPoint.x > leg.end().x) {
                 //turn right
@@ -228,10 +299,10 @@ ConnectorsService = (function() {
             if (leg.x1 == testLeg.x() || leg.y1 == testLeg.y()) {
                 collisionDetected = true;
             }
-
+            // test box colisions
             var collisionResult = detectBoxCollision(classMap, testLeg);
 
-            adjustmentValue = ((((count % 2) * 2) - 1) * ((count / 2) | 0) * 10);
+            adjustmentValue = -((((count % 2) * 2) - 1) * ((count / 2) | 0) * 10);
             if (collisionResult.collisionBox || collisionDetected) {
                 //adjust test leg and loop to test again
                 if (testLeg.isHorizantal) {
@@ -261,7 +332,7 @@ ConnectorsService = (function() {
         return leg;
     }
 
-    function cleanUpPath(pathPoints) {
+    function cleanUpPath(classMap, legsMap, pathPoints) {
         //check for loops
         forwardLoop: for (let forwardIndex = 1; forwardIndex < pathPoints.length; forwardIndex++) {
             for (let backwardIndex = pathPoints.length - 2; backwardIndex > forwardIndex; backwardIndex--) {
@@ -280,108 +351,88 @@ ConnectorsService = (function() {
                     break forwardLoop;
                 }
             }
-
         }
-    }
 
-    // Given three collinear points p, q, r, the function checks if
-    // point q lies on line segment 'pr'
-    function onSegment(p, q, r) {
-        if (q.x <= Math.max(p.x, r.x) && q.x >= Math.min(p.x, r.x) &&
-            q.y <= Math.max(p.y, r.y) && q.y >= Math.min(p.y, r.y))
-            return true;
+            for (let forwardIndex = 0; forwardIndex + 4 < pathPoints.length; forwardIndex++) {
+            // if first leg is vertical
+            if (pathPoints[forwardIndex].x === pathPoints[forwardIndex + 1].x) {
+                var leg1 = new PathLegModel(pathPoints[forwardIndex], false, pathPoints[forwardIndex + 1]);
+                var leg2 = new PathLegModel(pathPoints[forwardIndex + 1], true, pathPoints[forwardIndex + 2]);
+                var leg3 = new PathLegModel(pathPoints[forwardIndex + 2], false, pathPoints[forwardIndex + 3]);
 
-        return false;
-    }
+                // if leg 1 and leg 3 are going in different directions
+                if ((leg1.y1 > leg1.y2) ^ (leg3.y1 > leg3.y2)) {
+                    var newX = leg2.y() + Math.min(Math.abs(leg1.y1 - leg1.y2), Math.abs(leg3.y1 - leg3.y2)) * Math.sign(leg1.y1 - leg1.y2)
+                    leg2.y1 = newX;
+                    leg2.y2 = newX;
+                    leg2.x1 = leg1.x() < leg3.x() ? leg2.x1 + 1 : leg2.x1 - 1;
+                    leg2.x2 = leg1.x() < leg3.x() ? leg2.x2 - 1 : leg2.x2 + 1;
+                    var collisionResult = detectBoxCollision(classMap, leg2);
+                    if (collisionResult.collisionBox) { continue; }
+                    collisionResult = detectLineCollision(legsMap, leg2);
+                    if (collisionResult.collisionLeg) { continue; }
 
-    // To find orientation of ordered triplet (p, q, r).
-    // The function returns following values
-    // 0 --> p, q and r are collinear
-    // 1 --> Clockwise
-    // 2 --> Counterclockwise
-    function orientation(p, q, r) {
-
-        // See https://www.geeksforgeeks.org/orientation-3-ordered-points/
-        // for details of below formula.
-        let val = (q.y - p.y) * (r.x - q.x) -
-            (q.x - p.x) * (r.y - q.y);
-
-        if (val == 0) return 0; // collinear
-
-        return (val > 0) ? 1 : 2; // clock or counterclock wise
-    }
-
-    // The main function that returns true if line segment 'p1q1'
-    // and 'p2q2' intersect.
-    function doIntersect(p1, q1, p2, q2) {
-
-        // Find the four orientations needed for general and
-        // special cases
-        let o1 = orientation(p1, q1, p2);
-        let o2 = orientation(p1, q1, q2);
-        let o3 = orientation(p2, q2, p1);
-        let o4 = orientation(p2, q2, q1);
-
-        // General case
-        if (o1 != o2 && o3 != o4)
-            return true;
-
-        // Special Cases
-        // p1, q1 and p2 are collinear and p2 lies on segment p1q1
-        if (o1 == 0 && onSegment(p1, p2, q1)) return true;
-
-        // p1, q1 and q2 are collinear and q2 lies on segment p1q1
-        if (o2 == 0 && onSegment(p1, q2, q1)) return true;
-
-        // p2, q2 and p1 are collinear and p1 lies on segment p2q2
-        if (o3 == 0 && onSegment(p2, p1, q2)) return true;
-
-        // p2, q2 and q1 are collinear and q1 lies on segment p2q2
-        if (o4 == 0 && onSegment(p2, q1, q2)) return true;
-
-        return false; // Doesn't fall in any of the above cases
-    }
-
-    function buildConnectorModels(classMap) {
-        var connectors = {};
-
-        var links = []
-        for (const classObj of Object.values(classMap)) {
-            for (const link of classObj.links) {
-                if (link.end in classMap) {
-                    link.classObj = classObj;
-                    link.startingAnchor = classObj.anchor(link.start);
-                    link.endingAnchor = classMap[link.end].anchor(link.end);
-                    links.push(link);
+                    pathPoints.splice(forwardIndex + 1, 3, { 'x': pathPoints[forwardIndex].x, 'y': pathPoints[forwardIndex + 4].y })
+                    forwardIndex = 0;
                 }
+            } else {
+                // var leg1 = new PathLegModel(pathPoints[forwardIndex], true, pathPoints[forwardIndex + 1]);
+                // var leg2 = new PathLegModel(pathPoints[forwardIndex + 1], false, pathPoints[forwardIndex + 2]);
+                // var leg3 = new PathLegModel(pathPoints[forwardIndex + 2], true, pathPoints[forwardIndex + 3]);
+
+                // // if leg 1 and leg 3 are going in different directions
+                // if ((leg1.x1 > leg1.x2) ^ (leg3.x1 > leg3.x2) && forwardIndex > 0) {
+                //     var newX = leg2.x() + Math.min(Math.abs(leg1.x1 - leg1.x2), Math.abs(leg3.x1 - leg3.x2)) * Math.sign(leg1.x1 - leg1.x2);
+                //     leg2.x1 = newX;
+                //     leg2.x2 = newX;
+                //     leg2.y1 = leg1.y() < leg3.y() ? leg2.y1 + 1 : leg2.y1 - 1;
+                //     leg2.y2 = leg1.y() < leg3.y() ? leg2.y2 - 1 : leg2.y2 + 1;
+                //     var collisionResult = detectBoxCollision(classMap, leg2);
+                //     if (collisionResult.collisionBox) { continue; }
+                //     collisionResult = detectLineCollision(legsMap, leg2);
+                //     if (collisionResult.collisionLeg) { continue; }
+
+                //     pathPoints.splice(forwardIndex + 1, 3, { 'y': pathPoints[forwardIndex].y, 'x': pathPoints[forwardIndex + 4].x })
+                //     forwardIndex = 0;
+                // }
             }
         }
 
-        links.sort((a, b) => {
-            var distanceA = Math.sqrt(Math.pow((a.startingAnchor.x - a.endingAnchor.x), 2) + Math.pow((a.startingAnchor.y - a.endingAnchor.y), 2));
-            var distanceB = Math.sqrt(Math.pow((b.startingAnchor.x - b.endingAnchor.x), 2) + Math.pow((b.startingAnchor.y - b.endingAnchor.y), 2));
+        //     var newPointMap = {};
+        // for (let forwardIndex = 0; forwardIndex + 3 < pathPoints.length; forwardIndex++) {
+        //     var point1 = pathPoints[forwardIndex];
+        //     var point2 = pathPoints[forwardIndex + 1];
+        //     var point3 = pathPoints[forwardIndex + 2];
 
-            return distanceA - distanceB;
-        })
+        //     var newPoint1;
+        //     var newPoint2;
 
-        for (const link of links) {
-            console.log(link.start + ' => ' + link.end);
-            if (link.start == 'Reference-commonCropName') {
-                console.log('breakpoint')
-            }
+        //     if (point1.y == point2.y) {
+        //         //horizantal to vertical
+        //         var xAdjust = Math.sign(point1.x - point2.x) * 3;
+        //         var yAdjust = Math.sign(point2.y - point3.y) * 3;
 
-            var points = buildPath(classMap, legsMap, link.classObj, link.startingAnchor, link.endingAnchor);
+        //         newPoint1 = { x: point2.x + xAdjust, y: point2.y };
+        //         newPoint2 = { x: point2.x, y: point2.y + yAdjust };
+        //     } else {
+        //         // var yAdjust = Math.sign(point1.y - point2.y) * 3;
+        //         // var xAdjust = Math.sign(point2.x - point3.x) * 3;
 
-            var connector = {
-                id: link.start,
-                points: points,
-                markerEnd: 'filledTraiangle'
-            }
-            connectors[link.start] = connector;
-        }
+        //         // newPoint1 = { y: point2.y + yAdjust, x: point2.x };
+        //         // newPoint2 = { y: point2.y, x: point2.x + xAdjust };
+        //     }
+        //     newPointMap[forwardIndex + 1] = [newPoint1, newPoint2];
+        // }
 
-        return connectors;
+        // for (const index in newPointMap) {
+        //     if (Object.hasOwnProperty.call(newPointMap, index)) {
+        //         const element = newPointMap[index];
+        //         pathPoints.splice(index, 1, element[0], element[1]);
+        //     }
+        // }
     }
+
+    // draw functions -----------------------------------------------------------------------
 
     function drawConnectors(connectorsMap, svg) {
         var line = d3.line()
@@ -458,6 +509,106 @@ ConnectorsService = (function() {
                 .attr("fill", "black");
         });
 
+    }
+
+    // helper funtions -----------------------------------------------------------
+
+    legsMap = {
+        "horizantal": {},
+        "vertical": {}
+    }
+
+    function getFromLegsMap(legsMap, orrientation, value) {
+        return legsMap[orrientation][value | 0] ? legsMap[orrientation][value | 0] : [];
+    }
+
+    function addToLegMap(legsMap, leg) {
+        if (leg.isHorizantal) {
+            var value = leg.y() | 0
+            if (!legsMap.horizantal[value]) {
+                legsMap.horizantal[value] = [];
+            }
+            legsMap.horizantal[value].push({ "start": leg.x1, "end": leg.x2 });
+        } else {
+            var value = leg.x() | 0
+            if (!legsMap.vertical[value]) {
+                legsMap.vertical[value] = [];
+            }
+            legsMap.vertical[value].push({ "start": leg.y1, "end": leg.y2 });
+        }
+    }
+
+    function removeFromLegsMap(legsMap, leg) {
+
+    }
+
+    function isBetween(test, lower, upper) {
+        if (lower < upper)
+            return test >= lower && test <= upper
+        else
+            return test >= upper && test <= lower
+    }
+
+    function nearestTen(number) {
+        return (Math.round(number / 10) * 10)
+    }
+
+    // Given three collinear points p, q, r, the function checks if
+    // point q lies on line segment 'pr'
+    function onSegment(p, q, r) {
+        if (q.x <= Math.max(p.x, r.x) && q.x >= Math.min(p.x, r.x) &&
+            q.y <= Math.max(p.y, r.y) && q.y >= Math.min(p.y, r.y))
+            return true;
+
+        return false;
+    }
+
+    // To find orientation of ordered triplet (p, q, r).
+    // The function returns following values
+    // 0 --> p, q and r are collinear
+    // 1 --> Clockwise
+    // 2 --> Counterclockwise
+    function orientation(p, q, r) {
+
+        // See https://www.geeksforgeeks.org/orientation-3-ordered-points/
+        // for details of below formula.
+        let val = (q.y - p.y) * (r.x - q.x) -
+            (q.x - p.x) * (r.y - q.y);
+
+        if (val == 0) return 0; // collinear
+
+        return (val > 0) ? 1 : 2; // clock or counterclock wise
+    }
+
+    // The main function that returns true if line segment 'p1q1'
+    // and 'p2q2' intersect.
+    function doIntersect(p1, q1, p2, q2) {
+
+        // Find the four orientations needed for general and
+        // special cases
+        let o1 = orientation(p1, q1, p2);
+        let o2 = orientation(p1, q1, q2);
+        let o3 = orientation(p2, q2, p1);
+        let o4 = orientation(p2, q2, q1);
+
+        // General case
+        if (o1 != o2 && o3 != o4)
+            return true;
+
+        // Special Cases
+        // p1, q1 and p2 are collinear and p2 lies on segment p1q1
+        if (o1 == 0 && onSegment(p1, p2, q1)) return true;
+
+        // p1, q1 and q2 are collinear and q2 lies on segment p1q1
+        if (o2 == 0 && onSegment(p1, q2, q1)) return true;
+
+        // p2, q2 and p1 are collinear and p1 lies on segment p2q2
+        if (o3 == 0 && onSegment(p2, p1, q2)) return true;
+
+        // p2, q2 and q1 are collinear and q1 lies on segment p2q2
+        if (o4 == 0 && onSegment(p2, q1, q2)) return true;
+
+        return false; // Doesn't fall in any of the above cases
     }
 
     return {

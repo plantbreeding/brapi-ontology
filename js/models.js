@@ -80,6 +80,14 @@ PathLegModel = (function() {
         }
     }
 
+    PathLegModel.prototype.equals = function(leg2) {
+        return (this.isHorizantal === leg2.isHorizantal) &&
+            (this.x1 === leg2.x1) &&
+            (this.y1 === leg2.y1) &&
+            (this.x2 === leg2.x2) &&
+            (this.y2 === leg2.y2);
+    }
+
 
     return PathLegModel;
 })();

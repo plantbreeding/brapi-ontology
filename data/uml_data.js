@@ -592,8 +592,8 @@ UMLInputClasses = {
             ],
             "pk": "breedingMethodDbId",
             "links": [],
-            "x": 540,
-            "y": 700,
+            "x": 800,
+            "y": 720,
             "width": 150,
             "height": 0
         },
@@ -657,8 +657,8 @@ UMLInputClasses = {
                     "end": "ObservationUnit"
                 }
             ],
-            "x": 280,
-            "y": 700,
+            "x": 310,
+            "y": 350,
             "width": 150,
             "height": 0
         },
@@ -689,8 +689,8 @@ UMLInputClasses = {
                     "end": "Program"
                 }
             ],
-            "x": 280,
-            "y": 450,
+            "x": 310,
+            "y": 100,
             "width": 150,
             "height": 0
         },
@@ -740,8 +740,8 @@ UMLInputClasses = {
                     "end": "CommonCropName"
                 }
             ],
-            "x": 540,
-            "y": 50,
+            "x": 600,
+            "y": 100,
             "width": 150,
             "height": 0
         },
@@ -793,7 +793,7 @@ UMLInputClasses = {
                     "end": "Trait"
                 }
             ],
-            "x": 760,
+            "x": 800,
             "y": 100,
             "width": 150,
             "height": 0
@@ -821,7 +821,7 @@ UMLInputClasses = {
                     "end": "Germplasm"
                 }
             ],
-            "x": 760,
+            "x": 800,
             "y": 520,
             "width": 150,
             "height": 0
@@ -871,8 +871,8 @@ UMLInputClasses = {
                     "end": "PedigreeNode"
                 }
             ],
-            "x": 240,
-            "y": 50,
+            "x": 310,
+            "y": 550,
             "width": 150,
             "height": 0
         },
@@ -948,7 +948,7 @@ UMLInputClasses = {
                 }
             ],
             "x": 0,
-            "y": 50,
+            "y": 100,
             "width": 150,
             "height": 0
         }
@@ -1199,7 +1199,7 @@ UMLInputClasses = {
                 }
             ],
             "x": 480,
-            "y": 150,
+            "y": 100,
             "width": 150,
             "height": 0
         },

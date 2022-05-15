@@ -25,16 +25,16 @@ ClassService = (function() {
             dy = 0;
 
         if (modules.indexOf(moduleName) == 1) {
-            dx = 1400
+            dx = 1200
             dy = 0
         }
         if (modules.indexOf(moduleName) == 2) {
             dx = 0
-            dy = 1100
+            dy = 900
         }
         if (modules.indexOf(moduleName) == 3) {
-            dx = 1400
-            dy = 1100
+            dx = 1200
+            dy = 900
         }
 
         var classArr = [];

@@ -18,8 +18,9 @@ function chart() {
 
     ConnectorsService.drawMarkers(holder.append("defs"));
 
-    var activeModules = ['pheno', 'core', 'geno', 'germ'];
-    // var activeModules = ['pheno', 'core', 'geno'];
+    // var activeModules = ['pheno', 'core', 'geno', 'germ'];
+    var activeModules = ['core', 'pheno', 'geno', 'germ'];
+    // var activeModules = ['germ'];
 
     var classes = ClassService.buildClassModels(activeModules);
     var classesMap = ClassService.drawClasses(classes, holder);
