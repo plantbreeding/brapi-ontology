@@ -1,26 +1,69 @@
+// var activeModules = ['pheno', 'core', 'geno', 'germ'];
+var activeModules = [];
+// var activeModules = ['core'];
+
 window.addEventListener("load", () => {
+    redrawDiagram();
+});
+
+function redrawDiagram() {
+    var allCB = document.getElementById("all-checkbox");
+    var coreCB = document.getElementById("core-checkbox");
+    var phenoCB = document.getElementById("pheno-checkbox");
+    var genoCB = document.getElementById("geno-checkbox");
+    var germCB = document.getElementById("germ-checkbox");
+
+    if (allCB.checked) {
+        activeModules = ['core', 'pheno', 'geno', 'germ'];
+        coreCB.disabled = true;
+        phenoCB.disabled = true;
+        genoCB.disabled = true;
+        germCB.disabled = true;
+    } else {
+        activeModules = [];
+        coreCB.disabled = false;
+        phenoCB.disabled = false;
+        genoCB.disabled = false;
+        germCB.disabled = false;
+        if (coreCB.checked)
+            activeModules.push(coreCB.value)
+        if (phenoCB.checked)
+            activeModules.push(phenoCB.value)
+        if (genoCB.checked)
+            activeModules.push(genoCB.value)
+        if (germCB.checked)
+            activeModules.push(germCB.value)
+    }
+
+    activeModules.sort((a, b) => {
+        var orderedModules = ['core', 'pheno', 'geno', 'germ'];
+        var aI = orderedModules.indexOf(a);
+        var bI = orderedModules.indexOf(b);
+        return aI - bI;
+    })
+    startingZoom = 0.12;
+
+    document.getElementById("mynetwork").innerHTML = '';
     d3.select("#mynetwork")
         .append(chart);
-});
+}
 
 function chart() {
     EventsService.setLS("selectedClassAttributes", []);
     const svg = d3.create("svg")
-        .attr("viewBox", [-30, -5, 1500, 1500])
-        .style("font", "12px sans-serif")
+        .attr("viewBox", [-5, -5, 300, 2000])
+        .attr("class", "svg-content")
         .call(
             d3.zoom()
             .on('zoom', handleZoom))
         .on("click", EventsService.onClickClass);
 
     const holder = svg.append("g")
-        .attr("class", "classesHolder");
+        .attr("id", "classesHolder")
+        .attr("class", "classesHolder")
+        .attr("transform", "scale(" + startingZoom + ")");
 
     ConnectorsService.drawMarkers(holder.append("defs"));
-
-    // var activeModules = ['pheno', 'core', 'geno', 'germ'];
-    var activeModules = ['core', 'pheno', 'geno', 'germ'];
-    // var activeModules = ['germ'];
 
     var classes = ClassService.buildClassModels(activeModules);
     var classesMap = ClassService.drawClasses(classes, holder);
@@ -34,7 +77,11 @@ function chart() {
     return svg.node();
 };
 
+var startingZoom = 0.12;
+
 function handleZoom(e) {
+    e.transform.k = e.transform.k * startingZoom;
+    startingZoom = 1;
     d3.select('g.classesHolder')
         .attr('transform', e.transform);
 }

@@ -1,8 +1,20 @@
 #mynetwork {
-    /*width: 98%;*/
-    height: 98%;
     border: 1px solid lightgray;
     margin: 5px;
+    display: inline-block;
+    position: relative;
+    width: 99%;
+    height: 85vh;
+    vertical-align: top;
+    overflow: hidden;
+}
+
+.svg-content {
+    display: inline-block;
+    position: absolute;
+    top: 0;
+    left: 0;
+    font: 12px sans-serif;
 }
 
 p {

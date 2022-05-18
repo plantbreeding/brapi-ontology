@@ -6,7 +6,7 @@ UMLInputClasses = {
             ],
             "pk": "commonCropName",
             "links": [],
-            "x": 720,
+            "x": 740,
             "y": 0,
             "width": 150,
             "height": 0
@@ -33,7 +33,7 @@ UMLInputClasses = {
                 "start": "ListDetails-listOwnerPersonDbId",
                 "end": "Person"
             }],
-            "x": 720,
+            "x": 730,
             "y": 100,
             "width": 150,
             "height": 0
@@ -68,8 +68,8 @@ UMLInputClasses = {
                 "start": "Location-parentLocationDbId",
                 "end": "Location"
             }],
-            "x": 480,
-            "y": 400,
+            "x": 490,
+            "y": 450,
             "width": 150,
             "height": 0
         },
@@ -90,8 +90,8 @@ UMLInputClasses = {
             ],
             "pk": "personDbId",
             "links": [],
-            "x": 720,
-            "y": 400,
+            "x": 730,
+            "y": 450,
             "width": 150,
             "height": 0
         },
@@ -121,7 +121,7 @@ UMLInputClasses = {
                     "end": "Person"
                 }
             ],
-            "x": 480,
+            "x": 490,
             "y": 100,
             "width": 150,
             "height": 0
@@ -135,7 +135,7 @@ UMLInputClasses = {
             ],
             "pk": "seasonDbId",
             "links": [],
-            "x": 240,
+            "x": 250,
             "y": 500,
             "width": 150,
             "height": 0
@@ -226,7 +226,7 @@ UMLInputClasses = {
                     "end": "Program"
                 }
             ],
-            "x": 240,
+            "x": 250,
             "y": 100,
             "width": 150,
             "height": 0
@@ -315,7 +315,10 @@ UMLInputClasses = {
                 "unit"
             ],
             "pk": "mapDbId",
-            "links": [],
+            "links": [{
+                "start": "GenomeMap-commonCropName",
+                "end": "CommonCropName"
+            }],
             "x": 0,
             "y": 550,
             "width": 150,
@@ -740,8 +743,8 @@ UMLInputClasses = {
                     "end": "CommonCropName"
                 }
             ],
-            "x": 600,
-            "y": 100,
+            "x": 550,
+            "y": 200,
             "width": 150,
             "height": 0
         },
@@ -872,7 +875,7 @@ UMLInputClasses = {
                 }
             ],
             "x": 310,
-            "y": 550,
+            "y": 590,
             "width": 150,
             "height": 0
         },

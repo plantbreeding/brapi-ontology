@@ -12,9 +12,11 @@
     <script type="text/javascript" src="js/d3_local.js"></script> -->
     <script type="text/javascript" src="js/class-diagram.js"></script>
     <script type="text/javascript" src="js/multiline-text.js"></script>
-    <script type="text/javascript" src="js/classes.js"></script>
-    <script type="text/javascript" src="js/connectors.js"></script>
-    <script type="text/javascript" src="js/class-model.js"></script>
+    <script type="text/javascript" src="js/class-service.js"></script>
+    <script type="text/javascript" src="js/events-service.js"></script>
+    <script type="text/javascript" src="js/connectors-service.js"></script>
+    <script type="text/javascript" src="js/models.js"></script>
+    <script type="text/javascript" src="data/uml_data.js"></script>
     <script type="text/javascript" src="js/uml.js"></script>
     <link href="css/uml.css" rel="stylesheet" />
 
@@ -39,7 +41,20 @@
     </div>
     <div class="box" style="float: right; width: 50%;">
         <div class="row header">
-            <p></p>
+            <p>Click + Drag to move the diagram. Move the scroll wheel to zoom.
+                <br>BrAPI Modules to display:
+                <br>
+                <input type="checkbox" id="all-checkbox" name="all-checkbox" value="all" onclick="redrawDiagram()" checked>
+                <label for="all-checkbox"> All </label><br>
+                <input type="checkbox" id="core-checkbox" name="core-checkbox" value="core" onclick="redrawDiagram()" checked disabled>
+                <label for="core-checkbox"> BrAPI-Core </label><br>
+                <input type="checkbox" id="pheno-checkbox" name="pheno-checkbox" value="pheno" onclick="redrawDiagram()" checked disabled>
+                <label for="pheno-checkbox"> BrAPI-Phenotyping</label><br>
+                <input type="checkbox" id="geno-checkbox" name="geno-checkbox" value="geno" onclick="redrawDiagram()" checked disabled>
+                <label for="geno-checkbox"> BrAPI-Genoyping </label><br>
+                <input type="checkbox" id="germ-checkbox" name="germ-checkbox" value="germ" onclick="redrawDiagram()" checked disabled>
+                <label for="germ-checkbox"> BrAPI-Germplasm</label><br>
+            </p>
         </div>
         <div class="row content">
             <div id="mynetwork"></div>

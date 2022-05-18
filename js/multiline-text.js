@@ -7,6 +7,7 @@ d3.multilineText = function() {
     var paddingLeft = 10;
     var paddingRight = 10;
     var className = 'className';
+    var classPK = '';
     var textAnchorsByHorizontalAlign = {
         'center': 'middle',
         'left': 'start',
@@ -69,7 +70,7 @@ d3.multilineText = function() {
                 }
 
                 var lineGBBox = d3.getBBox(lineG);
-                lineG.append('rect')
+                var lineBox = lineG.append('rect')
                     .attr("fill", "white")
                     .attr("opacity", "0")
                     .attr('pointer-events', 'all')
@@ -81,6 +82,10 @@ d3.multilineText = function() {
                     .attr('data-class-attribute-name', className + "-" + line)
                     .on('mouseover', EventsService.classGlowMouseOver)
                     .on('mouseout', EventsService.classGlowMouseOut);
+
+                if (line === classPK) {
+                    lineBox.attr('data-class-pk', true);
+                }
             }
         });
     }
@@ -143,6 +148,12 @@ d3.multilineText = function() {
     my.className = function(value) {
         if (!arguments.length) return className;
         className = value;
+        return my;
+    };
+
+    my.classPK = function(value) {
+        if (!arguments.length) return classPK;
+        classPK = value;
         return my;
     };
 

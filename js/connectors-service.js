@@ -3,8 +3,9 @@ ConnectorsService = (function() {
     // build path functions ----------------------------------------------------
     function buildConnectorModels(classMap) {
         var connectors = {};
+        var links = [];
+        var legsMap = { "horizantal": {}, "vertical": {} };
 
-        var links = []
         for (const classObj of Object.values(classMap)) {
             for (const link of classObj.links) {
                 if (link.end in classMap) {
@@ -25,14 +26,11 @@ ConnectorsService = (function() {
 
         for (const link of links) {
             console.log(link.start + ' => ' + link.end);
-            if (link.start == 'Reference-commonCropName') {
-                console.log('breakpoint')
-            }
 
             var points = buildPath(classMap, legsMap, link.classObj, link.startingAnchor, link.endingAnchor);
 
             var connector = {
-                id: link.start,
+                id: link.start + ',' + link.end,
                 points: points,
                 markerEnd: 'filledTraiangle'
             }
@@ -302,7 +300,7 @@ ConnectorsService = (function() {
             // test box colisions
             var collisionResult = detectBoxCollision(classMap, testLeg);
 
-            adjustmentValue = -((((count % 2) * 2) - 1) * ((count / 2) | 0) * 10);
+            adjustmentValue = -(((count % 2) * 2) - 1) * ((count / 2) | 0) * (testLeg.isHorizantal ? 10 : -10);
             if (collisionResult.collisionBox || collisionDetected) {
                 //adjust test leg and loop to test again
                 if (testLeg.isHorizantal) {
@@ -398,38 +396,43 @@ ConnectorsService = (function() {
             }
         }
 
-        //     var newPointMap = {};
-        // for (let forwardIndex = 0; forwardIndex + 3 < pathPoints.length; forwardIndex++) {
-        //     var point1 = pathPoints[forwardIndex];
-        //     var point2 = pathPoints[forwardIndex + 1];
-        //     var point3 = pathPoints[forwardIndex + 2];
+            var newPointMap = {};
+        for (let forwardIndex = 0; forwardIndex + 2 < pathPoints.length; forwardIndex++) {
+            var point1 = pathPoints[forwardIndex];
+            var point2 = pathPoints[forwardIndex + 1];
+            var point3 = pathPoints[forwardIndex + 2];
 
-        //     var newPoint1;
-        //     var newPoint2;
+            var newPoint1;
+            var newPoint2;
 
-        //     if (point1.y == point2.y) {
-        //         //horizantal to vertical
-        //         var xAdjust = Math.sign(point1.x - point2.x) * 3;
-        //         var yAdjust = Math.sign(point2.y - point3.y) * 3;
+            if (point1.y == point2.y) {
+                //horizantal to vertical
+                var xAdjust = Math.sign(point1.x - point2.x) * 3;
+                var yAdjust = -Math.sign(point2.y - point3.y) * 3;
 
-        //         newPoint1 = { x: point2.x + xAdjust, y: point2.y };
-        //         newPoint2 = { x: point2.x, y: point2.y + yAdjust };
-        //     } else {
-        //         // var yAdjust = Math.sign(point1.y - point2.y) * 3;
-        //         // var xAdjust = Math.sign(point2.x - point3.x) * 3;
+                newPoint1 = { x: point2.x + xAdjust, y: point2.y };
+                newPoint2 = { x: point2.x, y: point2.y + yAdjust };
 
-        //         // newPoint1 = { y: point2.y + yAdjust, x: point2.x };
-        //         // newPoint2 = { y: point2.y, x: point2.x + xAdjust };
-        //     }
-        //     newPointMap[forwardIndex + 1] = [newPoint1, newPoint2];
-        // }
+                newPointMap[forwardIndex + 1] = [newPoint1, newPoint2];
+            } else {
+                var yAdjust = Math.sign(point1.y - point2.y) * 3;
+                var xAdjust = -Math.sign(point2.x - point3.x) * 3;
 
-        // for (const index in newPointMap) {
-        //     if (Object.hasOwnProperty.call(newPointMap, index)) {
-        //         const element = newPointMap[index];
-        //         pathPoints.splice(index, 1, element[0], element[1]);
-        //     }
-        // }
+                newPoint1 = { y: point2.y + yAdjust, x: point2.x };
+                newPoint2 = { y: point2.y, x: point2.x + xAdjust };
+
+                newPointMap[forwardIndex + 1] = [newPoint1, newPoint2];
+            }
+        }
+
+        var loopCount = 0;
+        for (const index in newPointMap) {
+            if (Object.hasOwnProperty.call(newPointMap, index)) {
+                const element = newPointMap[index];
+                pathPoints.splice(parseInt(index) + loopCount, 1, element[0], element[1]);
+                loopCount++;
+            }
+        }
     }
 
     // draw functions -----------------------------------------------------------------------
@@ -512,11 +515,6 @@ ConnectorsService = (function() {
     }
 
     // helper funtions -----------------------------------------------------------
-
-    legsMap = {
-        "horizantal": {},
-        "vertical": {}
-    }
 
     function getFromLegsMap(legsMap, orrientation, value) {
         return legsMap[orrientation][value | 0] ? legsMap[orrientation][value | 0] : [];

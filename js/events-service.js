@@ -25,15 +25,46 @@ EventsService = (function() {
     function onClickClass(event) {
         var oldSelectedArr = getLS("selectedClassAttributes");
         var newSelectedArr = getLS("selectedClassAttributes");
-        var targetObj = d3.select(event.target);
-        var targetArr = [{ "className": targetObj.attr('data-class-name'), "attrName": targetObj.attr('data-class-attribute-name') }];
+        var targetObjClassName = d3.select(event.target).attr('data-class-name');
+        var targetObjAttrName = d3.select(event.target).attr('data-class-attribute-name');
+        var targetObjPK = d3.select(event.target).attr('data-class-pk');
+        var targetArr = {};
 
-        if (targetObj.attr('data-class-name') && targetObj.attr('data-class-attribute-name')) {
+        if (targetObjClassName && targetObjAttrName) {
+
+
+            if (targetObjAttrName.endsWith('-className')) {
+                //the class name was clicked
+                d3.selectAll('[id$=",' + targetObjClassName + '"].connector').nodes().forEach(element => {
+                    var elementClassName = element.id.split(',')[0].split('-')[0];
+                    var elementAttrName = element.id.split(',')[0];
+                    targetArr[elementClassName + elementAttrName] = { "className": elementClassName, "attrName": elementAttrName };
+                });
+                d3.selectAll('[id^="' + targetObjClassName + '-"].connector').nodes().forEach(element => {
+                    var elementClassName = element.id.split(',')[0].split('-')[0];
+                    var elementAttrName = element.id.split(',')[0];
+                    targetArr[elementClassName + elementAttrName] = { "className": elementClassName, "attrName": elementAttrName };
+                });
+                var pkAttrName = d3.select('[data-class-pk="true"][data-class-name="' + targetObjClassName + '"]').attr('data-class-attribute-name');
+                targetArr[targetObjClassName + pkAttrName] = { "className": targetObjClassName, "attrName": pkAttrName };
+            } else if (targetObjPK) {
+                //the class name was clicked
+                d3.selectAll('[id$=",' + targetObjClassName + '"].connector').nodes().forEach(element => {
+                    var elementClassName = element.id.split(',')[0].split('-')[0];
+                    var elementAttrName = element.id.split(',')[0];
+                    targetArr[elementClassName + elementAttrName] = { "className": elementClassName, "attrName": elementAttrName };
+                });
+                targetArr[targetObjClassName + targetObjAttrName] = { "className": targetObjClassName, "attrName": targetObjAttrName };
+            } else {
+                // normal field clicked
+                targetArr[targetObjClassName + targetObjAttrName] = { "className": targetObjClassName, "attrName": targetObjAttrName };
+            }
+
             //is a clickable thing
             if (!event.shiftKey) {
-                newSelectedArr = targetArr;
+                newSelectedArr = Object.values(targetArr);
             } else {
-                targetArr.forEach(element => {
+                Object.values(targetArr).forEach(element => {
                     var index = newSelectedArr.findIndex(e => { return e.className === element.className && e.attrName === element.attrName; });
                     if (index < 0) {
                         newSelectedArr.push(element);
@@ -69,7 +100,7 @@ EventsService = (function() {
             .transition()
             .duration('50')
             .attr("opacity", ".5");
-        d3.select('#' + attrName + '.connector')
+        d3.select('[id^="' + attrName + ',"].connector')
             .transition()
             .duration('50')
             .attr("stroke-width", 4);
@@ -84,7 +115,7 @@ EventsService = (function() {
             .transition()
             .duration('50')
             .attr("opacity", "0");
-        d3.select('#' + attrName + '.connector')
+        d3.select('[id^="' + attrName + ',"].connector')
             .transition()
             .duration('50')
             .attr("stroke-width", 1);

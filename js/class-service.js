@@ -41,12 +41,11 @@ ClassService = (function() {
         moduleData.forEach(classDef => {
             // classDef.x = (Math.random() * 4000) | 0;
             // classDef.y = (Math.random() * 4000) | 0;
-            classDef.x = classDef.x + dx;
-            classDef.y = classDef.y + dy;
-            classDef.moduleName = moduleName;
-
-
             var classObj = new ClassModel(classDef);
+            classObj.x = classObj.x + dx;
+            classObj.y = classObj.y + dy;
+            classObj.moduleName = moduleName;
+
             classArr.push(classObj);
 
         });
@@ -97,6 +96,7 @@ ClassService = (function() {
             .call(d3.multilineText()
                 .text(classObj.attributes)
                 .className(classObj.className)
+                .classPK(classObj.pk)
                 .width(classObj.width)
                 .height(classObj.height)
                 .verticalAlign("top")
@@ -115,8 +115,6 @@ ClassService = (function() {
         classObj.attributes.forEach((attribute, i) => {
             var id = classObj.className + "-" + attribute;
             var attributeBBox = d3.getBBox(classG.select("#" + id));
-            // var x = Math.round((classObj.x + bbox.width) / 10) * 10;
-            // var y = Math.round((classObj.y + classNameBBox.height + attributeBBox.y + 8) / 10) * 10;
             var x = Math.round(classObj.x + bbox.width);
             var y = Math.round(classObj.y + classNameBBox.height + attributeBBox.y + 8);
             anchors[id] = { x: x, y: y }
@@ -125,14 +123,10 @@ ClassService = (function() {
         var pkText = classG.select("#" + classObj.className + "-" + classObj.pk);
         if (pkText.node()) {
             var pkBBox = d3.getBBox(pkText);
-            // var x = Math.round((classObj.x) / 10) * 10;
-            // var y = Math.round((classObj.y + classNameBBox.height + pkBBox.y + 8) / 10) * 10;
             var x = Math.round(classObj.x);
             var y = Math.round(classObj.y + classNameBBox.height + pkBBox.y + 8);
             anchors[classObj.className] = { x: x, y: y }
         } else {
-            // var x = Math.round((classObj.x) / 10) * 10;
-            // var y = Math.round((classObj.y + 11) / 10) * 10;
             var x = Math.round(classObj.x);
             var y = Math.round(classObj.y + 11);
             anchors[classObj.className] = { x: x, y: y }
