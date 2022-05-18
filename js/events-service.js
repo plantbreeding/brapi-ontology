@@ -45,8 +45,11 @@ EventsService = (function() {
                     var elementAttrName = element.id.split(',')[0];
                     targetArr[elementClassName + elementAttrName] = { "className": elementClassName, "attrName": elementAttrName };
                 });
-                var pkAttrName = d3.select('[data-class-pk="true"][data-class-name="' + targetObjClassName + '"]').attr('data-class-attribute-name');
-                targetArr[targetObjClassName + pkAttrName] = { "className": targetObjClassName, "attrName": pkAttrName };
+                var pkAttr = d3.select('[data-class-pk="true"][data-class-name="' + targetObjClassName + '"]');
+                if (pkAttr.node() && pkAttr.attr('data-class-attribute-name')) {
+                    var pkAttrName = d3.select('[data-class-pk="true"][data-class-name="' + targetObjClassName + '"]').attr('data-class-attribute-name');
+                    targetArr[targetObjClassName + pkAttrName] = { "className": targetObjClassName, "attrName": pkAttrName };
+                }
             } else if (targetObjPK) {
                 //the class name was clicked
                 d3.selectAll('[id$=",' + targetObjClassName + '"].connector').nodes().forEach(element => {
