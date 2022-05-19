@@ -7,6 +7,10 @@ ConnectorsService = (function() {
         var legsMap = { "horizantal": {}, "vertical": {} };
 
         for (const classObj of Object.values(classMap)) {
+            // create artificial lines to the left of every class
+            var dummyPath = new PathLegModel({ x: classObj.leftX() - 10, y: classObj.topY() + 1 }, false, { x: classObj.leftX() - 10, y: classObj.bottomY() - 1 });
+            addToLegMap(legsMap, dummyPath);
+
             for (const link of classObj.links) {
                 if (link.end in classMap) {
                     link.classObj = classObj;
@@ -331,7 +335,7 @@ ConnectorsService = (function() {
     }
 
     function cleanUpPath(classMap, legsMap, pathPoints) {
-        //check for loops
+        //check for and remove path loops
         forwardLoop: for (let forwardIndex = 1; forwardIndex < pathPoints.length; forwardIndex++) {
             for (let backwardIndex = pathPoints.length - 2; backwardIndex > forwardIndex; backwardIndex--) {
                 if (doIntersect(pathPoints[forwardIndex - 1], pathPoints[forwardIndex], pathPoints[backwardIndex], pathPoints[backwardIndex + 1])) {
@@ -351,6 +355,7 @@ ConnectorsService = (function() {
             }
         }
 
+        //check for and remove useless U bends
             for (let forwardIndex = 0; forwardIndex + 4 < pathPoints.length; forwardIndex++) {
             // if first leg is vertical
             if (pathPoints[forwardIndex].x === pathPoints[forwardIndex + 1].x) {
@@ -396,6 +401,8 @@ ConnectorsService = (function() {
             }
         }
 
+
+        // add diagonal corners
             var newPointMap = {};
         for (let forwardIndex = 0; forwardIndex + 2 < pathPoints.length; forwardIndex++) {
             var point1 = pathPoints[forwardIndex];
@@ -405,7 +412,7 @@ ConnectorsService = (function() {
             var newPoint1;
             var newPoint2;
 
-            if (point1.y == point2.y) {
+            if (point1.y == point2.y && point1.x != point2.x) {
                 //horizantal to vertical
                 var xAdjust = Math.sign(point1.x - point2.x) * 3;
                 var yAdjust = -Math.sign(point2.y - point3.y) * 3;
@@ -414,7 +421,8 @@ ConnectorsService = (function() {
                 newPoint2 = { x: point2.x, y: point2.y + yAdjust };
 
                 newPointMap[forwardIndex + 1] = [newPoint1, newPoint2];
-            } else {
+            } else if (point1.y != point2.y && point1.x == point2.x) {
+                // vertical to horizantal
                 var yAdjust = Math.sign(point1.y - point2.y) * 3;
                 var xAdjust = -Math.sign(point2.x - point3.x) * 3;
 

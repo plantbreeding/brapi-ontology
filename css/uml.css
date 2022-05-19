@@ -4,7 +4,7 @@
     display: inline-block;
     position: relative;
     width: 99%;
-    height: 85vh;
+    height: 80vh;
     vertical-align: top;
     overflow: hidden;
 }
@@ -15,14 +15,6 @@
     top: 0;
     left: 0;
     font: 12px sans-serif;
-}
-
-p {
-    max-width: 600px;
-}
-
-h4 {
-    margin-bottom: 3px;
 }
 
 html,

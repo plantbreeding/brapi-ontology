@@ -69,7 +69,7 @@ UMLInputClasses = {
                 "end": "Location"
             }],
             "x": 490,
-            "y": 450,
+            "y": 460,
             "width": 150,
             "height": 0
         },
@@ -91,7 +91,7 @@ UMLInputClasses = {
             "pk": "personDbId",
             "links": [],
             "x": 730,
-            "y": 450,
+            "y": 460,
             "width": 150,
             "height": 0
         },
@@ -417,7 +417,7 @@ UMLInputClasses = {
                 }
             ],
             "x": 720,
-            "y": 600,
+            "y": 620,
             "width": 150,
             "height": 0
         },

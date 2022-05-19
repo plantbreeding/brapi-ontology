@@ -98,7 +98,8 @@ EventsService = (function() {
         d3.select('#' + className + ' rect')
             .transition()
             .duration('50')
-            .attr("stroke-width", 4);
+            .attr("stroke-width", 4)
+            .attr("stroke", "#b01500");
         d3.select('#' + attrName + ' rect')
             .transition()
             .duration('50')
@@ -106,14 +107,16 @@ EventsService = (function() {
         d3.select('[id^="' + attrName + ',"].connector')
             .transition()
             .duration('50')
-            .attr("stroke-width", 4);
+            .attr("stroke-width", 4)
+            .attr("stroke", "#b01500");
     }
 
     function unglow(className, attrName) {
         d3.select('#' + className + ' rect')
             .transition()
             .duration('50')
-            .attr("stroke-width", 1);
+            .attr("stroke-width", 1)
+            .attr("stroke", "black");
         d3.select('#' + attrName + ' rect')
             .transition()
             .duration('50')
@@ -121,7 +124,8 @@ EventsService = (function() {
         d3.select('[id^="' + attrName + ',"].connector')
             .transition()
             .duration('50')
-            .attr("stroke-width", 1);
+            .attr("stroke-width", 1)
+            .attr("stroke", "black");
     }
     return {
         onClickClass: onClickClass,

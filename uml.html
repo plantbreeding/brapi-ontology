@@ -23,10 +23,12 @@
 
 <body>
     <div class="box">
-        <div class="row header">
-            <p>Click + Drag to move the diagram. Move the scroll wheel to zoom.
-                <br>BrAPI Modules to display:
-                <br>
+        <div class="row header" style="margin: 0 0 0 20px">
+
+            <h2 style="margin: 5px 0 5px 0;">BrAPI V2.1 Entity Relationship Diagram</h2>
+            <p style="margin: 5px 0 15px 0;">This diagram shows the relationships between the major data classes in the BrAPI Spec.</p>
+            <div style="float:left; margin: 0 0 0 20px;">
+                BrAPI Modules to display:<br>
                 <input type="checkbox" id="all-checkbox" name="all-checkbox" value="all" onclick="redrawDiagram()" checked>
                 <label for="all-checkbox"> All </label><br>
                 <input type="checkbox" id="core-checkbox" name="core-checkbox" value="core" onclick="redrawDiagram()" checked disabled>
@@ -37,7 +39,17 @@
                 <label for="geno-checkbox"> BrAPI-Genoyping </label><br>
                 <input type="checkbox" id="germ-checkbox" name="germ-checkbox" value="germ" onclick="redrawDiagram()" checked disabled>
                 <label for="germ-checkbox"> BrAPI-Germplasm</label><br>
-            </p>
+            </div>
+            <div style="float:left; margin: 0 0 0 20px; border-left: gray solid 1px; padding: 0 0 0 10px;">
+                Controls:
+                <ul style="margin: 0;">
+                    <li>Click + Drag to move the diagram.</li>
+                    <li>Rotate the scroll wheel to zoom.</li>
+                    <li>Click on a data field to highlight it and any arrows attached to it.</li>
+                    <li>Click on a class title to highlight all fields and arrows attached to it.</li>
+                    <li>Shift + Click to highlight multiple things simultaniously.</li>
+                </ul>
+            </div>
         </div>
         <div class="row content">
             <div id="mynetwork"></div>

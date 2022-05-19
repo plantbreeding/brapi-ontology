@@ -69,7 +69,7 @@ ClassService = (function() {
 
         var classNameRect = classNameG.append("rect")
             .attr("width", classObj.width)
-            .attr("fill", "white")
+            .attr("fill", "yellow")
             .attr("opacity", "0")
             .attr("stroke", "black")
             .attr("stroke-width", 1)

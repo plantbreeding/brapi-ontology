@@ -71,7 +71,7 @@ d3.multilineText = function() {
 
                 var lineGBBox = d3.getBBox(lineG);
                 var lineBox = lineG.append('rect')
-                    .attr("fill", "white")
+                    .attr("fill", "yellow")
                     .attr("opacity", "0")
                     .attr('pointer-events', 'all')
                     .attr('width', lineGBBox.width)
