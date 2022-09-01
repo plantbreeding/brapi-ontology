@@ -1,0 +1,54 @@
+html,
+body {
+    height: 100%;
+    margin: 0;
+}
+
+a {
+    text-decoration: auto;
+    padding: 0px 7px 4px 7px;
+    border: lightgray solid 1px;
+}
+
+.header {
+    padding-top: 10px;
+    padding-bottom: 20px;
+    position: sticky;
+    top: 0;
+    border-bottom: 1px solid gray;
+    background-color: white;
+}
+
+.footer {
+    padding-top: 15px;
+    padding-bottom: 20px;
+    position: sticky;
+    bottom: 0;
+    border-top: 1px solid gray;
+    background-color: white;
+    text-align: center;
+}
+
+.word-div p {
+    margin: 0;
+}
+
+.word-div {
+    margin-top: 15px;
+    margin-bottom: 10px;
+}
+
+div.word-div>div.col-1 {
+    margin-top: 5px;
+    text-align: right;
+}
+
+div.word-div>div.col-11 {
+    margin-top: 5px;
+}
+
+div.word-div>div.col-11>p:last-child {
+    font-size: small;
+    font-style: italic;
+    margin-left: 15px;
+}
