@@ -9,7 +9,9 @@ var currentPageSize = 20;
 function displayControls() {
     var indexList = DataService.getAlphabetIndexList()
     var lettersDiv = $("#letters")
+
     $('#page-size')[0].value = "20"
+    $('#word-count').text("of " + indexList.total)
 
     for (const letter of Object.keys(indexList.letters).sort()) {
         var letterA = $("<a/>")

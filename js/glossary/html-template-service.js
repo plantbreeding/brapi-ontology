@@ -7,7 +7,7 @@ HTMLTemplateService = (function() {
         for (const [definitionIndex, defintionObj] of wordObj.definitions.entries()) {
             var contextStr = buildContextString(defintionObj.context)
             definitionsHTML += definitionTemplate.replaceAll('{{num}}', definitionIndex + 1)
-                .replaceAll('{{def}}', defintionObj.definition)
+                .replaceAll('{{def}}', defintionObj.definition.replaceAll('\n\n', '<br>'))
                 .replaceAll('{{context}}', contextStr)
 
         }
