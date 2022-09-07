@@ -19,28 +19,40 @@ HTMLTemplateService = (function() {
     }
 
     function buildContextString(contextObj) {
-        var types = contextObj.types.slice(0, 3).join(', ')
+        var types = contextObj.types.sort().slice(0, 3).join(', ')
         if (contextObj.types.length > 3) {
             types += ', and ' + (contextObj.types.length - 3) + ' more'
         }
-        var tags = contextObj.tags.slice(0, 3).join(', ')
+        var tags = contextObj.tags.sort().slice(0, 3).join(', ')
         if (contextObj.tags.length > 3) {
             tags += ', and ' + (contextObj.tags.length - 3) + ' more'
         }
-        var paths = contextObj.paths.slice(0, 3).join(', ')
+        var paths = contextObj.paths.sort().slice(0, 3).join(', ')
         if (contextObj.paths.length > 3) {
             paths += ', and ' + (contextObj.paths.length - 3) + ' more'
         }
-        var classes = contextObj.classes.slice(0, 3).join(', ')
+        var classes = contextObj.classes.sort().slice(0, 3).join(', ')
         if (contextObj.classes.length > 3) {
             classes += ', and ' + (contextObj.classes.length - 3) + ' more'
         }
 
         var contextStr = '';
         if (types) { contextStr += types }
-        if (tags) { contextStr += " | " + tags }
-        if (classes) { contextStr += " <br> Classes: " + classes }
-        if (paths) { contextStr += " <br> Endpoints: " + paths }
+        // if (tags) { contextStr += " | " + tags }
+        if (classes) {
+            if (contextObj.classes.length == 1) {
+                contextStr += " <br> Class: " + classes
+            } else {
+                contextStr += " <br> Classes: " + classes
+            }
+        }
+        if (paths) {
+            if (contextObj.paths.length == 1) {
+                contextStr += " <br> Endpoint: " + paths
+            } else {
+                contextStr += " <br> Endpoints: " + paths
+            }
+        }
 
         return contextStr
     }

@@ -35,7 +35,7 @@ DataService = (function() {
             def['word'] = word[0].toLowerCase() + word.slice(1)
             return def;
         }).sort(function(a, b) {
-            return a.word > b.word
+            return a.word.toLowerCase() > b.word.toLowerCase()
         })
     }
 
