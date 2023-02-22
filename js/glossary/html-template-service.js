@@ -1,6 +1,6 @@
 HTMLTemplateService = (function() {
-    const definitionTemplate = '<div class="col-1"><p>({{num}})</p></div><div class="col-11"><p>{{def}}</p><p>{{context}}</p></div>'
-    const wordTemplate = '<div id="word-{{word}}" class="row word-div"><h3>{{word}}</h3>{{definitions}}</div>'
+    const definitionTemplate = '<div class="col-1"><p>({{num}})</p></div><div class="col-11"><p class="def-text">{{def}}</p><p>{{context}}</p></div>'
+    const wordTemplate = '<li id="word-{{word}}" class="row word-div"><h3 class="word-text">{{word}}</h3>{{definitions}}</li>'
 
     function getWordHTML(wordObj) {
         var definitionsHTML = ''

@@ -38,16 +38,16 @@ a {
     margin-bottom: 10px;
 }
 
-div.word-div>div.col-1 {
+.word-div>div.col-1 {
     margin-top: 5px;
     text-align: right;
 }
 
-div.word-div>div.col-11 {
+.word-div>div.col-11 {
     margin-top: 5px;
 }
 
-div.word-div>div.col-11>p:last-child {
+.word-div>div.col-11>p:last-child {
     font-size: small;
     font-style: italic;
     margin-left: 15px;

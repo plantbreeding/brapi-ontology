@@ -1,4 +1,20 @@
 window.addEventListener("load", () => {
+    var wordsData = DataService.getWordListPage(0, 1000)
+    var options = {
+        valueNames: ['word-text', 'def-text'],
+        item: HTMLTemplateService.getWordHTML,
+        searchColumns: ['word-text', 'def-text'],
+        page: currentPageSize,
+        pagination: {
+            innerWindow: 3,
+            outerWindow: 3
+        }
+    };
+
+    var wordlist = new List('wordlist', options, wordsData);
+    wordlist.reIndex();
+
+
     displayControls();
     displayWordList({ "data": { "index": 0 } });
 });
@@ -7,6 +23,8 @@ var currentIndex = 0;
 var currentPageSize = 20;
 
 function displayControls() {
+
+
     var indexList = DataService.getAlphabetIndexList()
     var lettersDiv = $("#letters")
 
@@ -26,12 +44,7 @@ function displayWordList(event) {
     var index = event.data.index
     currentIndex = index
     changeArrows(index, currentPageSize)
-    var page = DataService.getWordListPage(index, currentPageSize)
-    var wordList = $('#wordlist').empty()
-    for (const word of page) {
-        var wordHTML = HTMLTemplateService.getWordHTML(word)
-        wordList.append(wordHTML)
-    }
+
 }
 
 function changePageSize() {
